@@ -1,0 +1,14 @@
+# Normalization-stage allowlist: only these reviewed public documents may enter Git.
+# Expand this list with the approved implementation/publication diff.
+/*
+!/.gitignore
+!/README.md
+!/docs/
+/docs/*
+!/docs/README.md
+!/docs/architecture.md
+
+# Explicit local-only imports and evidence; never force-add these files.
+/docs/CONTROL_TOWER_INTEGRATION_REBASELINE.md
+/docs/CONTROL_TOWER_TARGET_ARCHITECTURE.md
+/evidence/
