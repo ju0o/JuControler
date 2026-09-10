@@ -1,8 +1,8 @@
-# JuControl
+# JuControler
 
 One Control Tower, many agents, one runtime bridge.
 
-JuControl is the unified product root for seeing, commanding, coordinating, and
+JuControler is the unified product root for seeing, commanding, coordinating, and
 verifying work across AI coding agents.
 
 The target architecture combines Python Hermes orchestration, Agent Relay's
@@ -17,11 +17,11 @@ There are no installation or execution instructions yet.
 New integration source belongs in `src/`, runtime/install tooling in `scripts/`,
 and tests in `tests/`. [Public documentation](docs/README.md) is reviewed
 separately from internal product planning, which belongs in the independent
-JuControl-Private checkout.
+JuControler-Private checkout.
 
 Code repository: [ju0o/JuControler](https://github.com/ju0o/JuControler).
-Owner confirmed this GitHub spelling. The product and local code root remain
-named JuControl; the repository name is JuControler.
+Owner confirmed JuControler as the product name. The local code root and GitHub
+repository use the same name; the separate product SSOT is JuControler-Private.
 
 See the [minimal target architecture](docs/architecture.md). Repository
 organization does not authorize Phase 1 implementation.

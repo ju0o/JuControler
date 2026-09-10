@@ -1,4 +1,4 @@
-# JuControl target architecture
+# JuControler target architecture
 
 One Control Tower, many agents, one runtime bridge.
 
@@ -18,7 +18,7 @@ Direct control can operate without creating a managed Task.
 Target agents are Claude Code, Codex, OpenCode, Cursor, CommandCode, Cline and
 Grok. These are integration targets, not a claim of certified runtime support.
 
-Existing components remain independent projects. JuControl contains the new
+Existing components remain independent projects. JuControler contains the new
 integration layer; it does not vendor or merge their source repositories.
 
 This is a planning skeleton. No integration runtime, GUI framework, new Task
