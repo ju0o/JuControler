@@ -16,15 +16,13 @@ independent projects that JuControler adapts rather than vendors. Target
 agents are Claude Code, Codex, OpenCode, Cursor, CommandCode, Cline, and Grok;
 these are integration targets, not a claim of certified runtime support.
 
-**Historical proof:** an earlier architecture iteration (see
-[docs/CONTROL_TOWER_TARGET_ARCHITECTURE.md](docs/CONTROL_TOWER_TARGET_ARCHITECTURE.md)
-and [docs/CONTROL_TOWER_INTEGRATION_REBASELINE.md](docs/CONTROL_TOWER_INTEGRATION_REBASELINE.md),
-both historical) certified a working Relay↔actl↔tmux↔Codex managed-Task
-loop end-to-end, including runtime identity, writer reservation, result
-correlation, independent verification, and reboot/runtime-loss recovery. That
-evidence carries forward into the current direction as a migration input; the
-architecture role it once assigned to a single required orchestration-brain
-process does not.
+**Historical proof:** an earlier architecture iteration (internal planning
+documents, not part of this public checkout) certified a working
+Relay↔actl↔tmux↔Codex managed-Task loop end-to-end, including runtime
+identity, writer reservation, result correlation, independent verification,
+and reboot/runtime-loss recovery. That evidence carries forward into the
+current direction as a migration input; the architecture role it once
+assigned to a single required orchestration-brain process does not.
 
 **Current status: V0 NOT CERTIFIED.** This checkout does not yet contain an
 implemented integration runtime or a certified end-to-end loop under the

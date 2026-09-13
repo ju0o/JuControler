@@ -1,9 +1,9 @@
 # JuControler target architecture
 
-**Current direction (VNext, 2026-09-13).** For the earlier certified
-architecture this supersedes, see the historical documents linked at the
-bottom of this page — that work's evidence carries forward; its choice of a
-single required orchestration-brain process does not.
+**Current direction (VNext, 2026-09-13).** This supersedes an earlier
+architecture iteration (internal planning documents, not part of this public
+checkout) — that work's evidence carries forward; its choice of a single
+required orchestration-brain process does not.
 
 One CLI to operate a portfolio of AI-built software projects.
 
@@ -36,10 +36,9 @@ new Task engine, message broker or daemon has been implemented here yet.
 
 ## Historical architecture (superseded, preserved as provenance)
 
-- [CONTROL_TOWER_INTEGRATION_REBASELINE.md](CONTROL_TOWER_INTEGRATION_REBASELINE.md) — GATE 1
-- [CONTROL_TOWER_TARGET_ARCHITECTURE.md](CONTROL_TOWER_TARGET_ARCHITECTURE.md) — GATE 2, D1–D10
-
-These certified a working Relay↔actl↔tmux↔Codex managed-Task loop end-to-end
-(runtime identity, writer reservation, result correlation, independent
-verification, reboot/runtime-loss recovery). Their original text is preserved
-unchanged as historical record; do not read their status headers as current.
+GATE 1 (Integration Rebaseline) and GATE 2 (Target Architecture, decisions
+D1–D10) certified a working Relay↔actl↔tmux↔Codex managed-Task loop
+end-to-end (runtime identity, writer reservation, result correlation,
+independent verification, reboot/runtime-loss recovery). Those documents are
+internal planning artifacts, not part of this public checkout; current
+approval state is tracked in the private product SSOT.
