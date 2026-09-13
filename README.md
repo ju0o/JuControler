@@ -1,18 +1,34 @@
 # JuControler
 
-One Control Tower, many agents, one runtime bridge.
+One CLI to operate a portfolio of AI-built software projects.
 
-JuControler is the unified product root for seeing, commanding, coordinating, and
-verifying work across AI coding agents.
+JuControler is a local-first, CLI-first control plane: bounded PM/Builder/
+Reviewer/QA/Operations Harnesses route work to interchangeable coding-agent
+runtimes, accept results only against independent evidence, and keep autonomy
+inside explicit resource and human-approval limits.
 
-The target architecture combines Python Hermes orchestration, Agent Relay's
-managed-work protocol, actl runtime control, and tmux transport. Existing
-components remain independent projects. Target agents are Claude Code, Codex,
-OpenCode, Cursor, CommandCode, Cline, and Grok.
+**Current direction (VNext, 2026-09-13):** Role is not Runtime — Harnesses
+(PM, Builder, Reviewer, QA) are separate from the Agent runtime executing
+them. Orchestration is deterministic control plus bounded LLM reasoning, not
+a single required orchestration-brain process. Existing components (Agent
+Relay's managed-work protocol, actl's runtime control, tmux transport) remain
+independent projects that JuControler adapts rather than vendors. Target
+agents are Claude Code, Codex, OpenCode, Cursor, CommandCode, Cline, and Grok;
+these are integration targets, not a claim of certified runtime support.
 
-Current status: project organization and architecture planning. This checkout
-does not yet contain an implemented integration runtime or a certified E2E loop.
-There are no installation or execution instructions yet.
+**Historical proof:** an earlier architecture iteration (see
+[docs/CONTROL_TOWER_TARGET_ARCHITECTURE.md](docs/CONTROL_TOWER_TARGET_ARCHITECTURE.md)
+and [docs/CONTROL_TOWER_INTEGRATION_REBASELINE.md](docs/CONTROL_TOWER_INTEGRATION_REBASELINE.md),
+both historical) certified a working Relay↔actl↔tmux↔Codex managed-Task
+loop end-to-end, including runtime identity, writer reservation, result
+correlation, independent verification, and reboot/runtime-loss recovery. That
+evidence carries forward into the current direction as a migration input; the
+architecture role it once assigned to a single required orchestration-brain
+process does not.
+
+**Current status: V0 NOT CERTIFIED.** This checkout does not yet contain an
+implemented integration runtime or a certified end-to-end loop under the
+current direction. There are no installation or execution instructions yet.
 
 New integration source belongs in `src/`, runtime/install tooling in `scripts/`,
 and tests in `tests/`. [Public documentation](docs/README.md) is reviewed
