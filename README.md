@@ -37,5 +37,10 @@ Code repository: [ju0o/JuControler](https://github.com/ju0o/JuControler).
 Owner confirmed JuControler as the product name. The local code root and GitHub
 repository use the same name; the separate product SSOT is JuControler-Private.
 
+`src/adapters/agent-relay.mjs` is a read-only adapter that projects a saved
+Agent Relay `night board` JSON snapshot into `project-status.v1` entries; it
+does not dispatch, run, or modify anything. Its mapping and offline usage are
+documented in the [project status contract](docs/integration/PROJECT_STATUS_CONTRACT.md#source-agent-relay-board-agent-relay-board).
+
 See the [minimal target architecture](docs/architecture.md). Repository
 organization does not authorize Phase 1 implementation.

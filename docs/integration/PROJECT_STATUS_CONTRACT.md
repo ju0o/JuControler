@@ -89,6 +89,69 @@ Consumers must not:
 - claim live execution, completion, acceptance, or release from this projection
   alone.
 
+## Source: Agent Relay board (`agent-relay-board`)
+
+`src/adapters/agent-relay.mjs` exports `projectAgentRelayBoard(board, options)`,
+a pure function that projects one already-parsed Agent Relay `night board`
+JSON snapshot into `project-status.v1` entries. It does not read files, spawn
+processes, open connections, dispatch work, or write to Agent Relay; the caller
+obtains the snapshot and passes it in.
+
+It returns one entry for the runner followed by one entry per lane:
+
+| Entry | `projectId` | `source.id` | `status` | `sourceRevision` |
+| --- | --- | --- | --- | --- |
+| Runner | `agent-relay` | `agent-relay/runner` | `day=<day>;night=<night>` | — |
+| Lane | lane `id` | `agent-relay/lanes/<id>` | lane `state` verbatim | lane `latestVersion` |
+
+All entries use `source.kind: "agent-relay-board"`. Status values are the
+source's own and are never remapped. Runner `day`/`night` may each be a string
+or `{ "state": "<value>" }`.
+
+`reason` values:
+
+| `reason` | `status` | When |
+| --- | --- | --- |
+| `missing-runner` | `UNKNOWN` | `runner` is absent. |
+| `missing-runner-mode` | `UNKNOWN` | Runner `day` or `night` is missing or not text. |
+| `missing-state` | `UNKNOWN` | Lane `state` is missing or empty. |
+| `invalid-holds` | `UNKNOWN` | Lane `holds` is present but not an array. |
+| `human-gate` | lane state | Lane `humanGate` is set (not `null`/`false`). |
+| `hold` | lane state | Lane `holds` is non-empty. |
+| `missing-observedAt` | as above | No valid UTC timestamp was found. |
+| `future-observedAt` | as above | The timestamp is later than `now`. |
+| `stale` | as above | `now - observedAt` exceeds `freshnessMs`. |
+
+A lane or runner reason takes precedence over a staleness reason in `reason`;
+`stale` is set independently. Human gates and holds are reported only as
+reasons and never change the status.
+
+Options:
+
+- `now` (default: current time): the reference time; also used as `generatedAt`.
+- `observedAt`: caller-supplied observation time. The first valid UTC
+  timestamp (`YYYY-MM-DDTHH:MM:SS[.fff]Z`) among `observedAt`,
+  `board.observedAt`, and `board.generatedAt` is used; otherwise `observedAt`
+  falls back to `generatedAt` and every entry is `stale: true`.
+- `freshnessMs` (default: `300000`, five minutes): the freshness limit.
+
+A structurally invalid snapshot throws `AgentRelayBoardError` with a `code`
+(`not-object`, `wrong-kind`, `invalid-lanes`, `invalid-runner`,
+`invalid-freshness`, `invalid-lane`, `duplicate-lane`, `invalid-now`) instead
+of producing entries. A lane with id `agent-relay` is rejected as a duplicate
+of the runner entry.
+
+Offline usage, from a saved snapshot:
+
+```sh
+node --input-type=module -e '
+import { readFileSync } from "node:fs";
+import { projectAgentRelayBoard } from "./src/adapters/agent-relay.mjs";
+const board = JSON.parse(readFileSync(process.argv[1], "utf8"));
+console.log(JSON.stringify(projectAgentRelayBoard(board), null, 2));
+' board.json
+```
+
 This contract intentionally does not define commands, retries, source-specific
 status vocabularies, or a deployment/release gate. Those belong to the owning
 source or a separately reviewed integration contract.
