@@ -152,6 +152,59 @@ console.log(JSON.stringify(projectAgentRelayBoard(board), null, 2));
 ' board.json
 ```
 
+## Source: JuPlan status (`juplan-status`)
+
+`src/adapters/juplan.mjs` exports `projectJuPlanStatus(saved, options)`, a pure
+function that projects one already-parsed, saved JuPlan status JSON object into
+a single `project-status.v1` entry. It does not read files, spawn processes,
+open connections, or write to JuPlan; the caller reads the file and passes the
+parsed JSON in.
+
+Source fields read (all others are ignored):
+
+| Source field | Required | Projected to |
+| --- | --- | --- |
+| `status` | yes | `status`, verbatim (never remapped). |
+| `projectId` | no | Must equal the `projectId` option when present. |
+| `observedAt` | no | `observedAt` (first valid UTC timestamp wins). |
+| `updatedAt` | no | `observedAt` fallback after `observedAt`. |
+| `revision` | no | `sourceRevision`. |
+| `stale` | no | Boolean; `true` marks the entry stale. |
+
+The entry uses `projectId` from the option (default `juplan`) and
+`source: { "kind": "juplan-status", "id": "juplan/<projectId>" }`.
+
+Unusable source data never throws; it fails closed to `status: "UNKNOWN"`,
+`stale: true`, no `sourceRevision`, and `observedAt` equal to `generatedAt`:
+
+| `reason` | `status` | When |
+| --- | --- | --- |
+| `malformed` | `UNKNOWN` | The saved value is not a JSON object. |
+| `project-mismatch` | `UNKNOWN` | Source `projectId` differs from the `projectId` option. |
+| `invalid-stale` | `UNKNOWN` | Source `stale` is present but not a boolean. |
+| `missing-status` | `UNKNOWN` | Source `status` is missing or not non-empty text. |
+| `missing-observedAt` | as above | No valid UTC timestamp was found. |
+| `future-observedAt` | as above | The timestamp is later than `now`. |
+| `stale` | as above | `now - observedAt` exceeds `freshnessMs`. |
+| `source-stale` | source status | Source `stale` is `true` and the time is otherwise fresh. |
+
+An `UNKNOWN` reason takes precedence over a staleness reason. Options are
+`projectId`, `now`, `observedAt`, and `freshnessMs` (default `300000`), with the
+same meaning as for the Agent Relay board adapter; a caller-supplied
+`observedAt` is checked first. Invalid options throw `JuPlanStatusError` with a
+`code` (`invalid-project-id`, `invalid-freshness`, `invalid-now`).
+
+Offline usage, from a saved status file:
+
+```sh
+node --input-type=module -e '
+import { readFileSync } from "node:fs";
+import { projectJuPlanStatus } from "./src/adapters/juplan.mjs";
+const saved = JSON.parse(readFileSync(process.argv[1], "utf8"));
+console.log(JSON.stringify(projectJuPlanStatus(saved), null, 2));
+' juplan-status.json
+```
+
 This contract intentionally does not define commands, retries, source-specific
 status vocabularies, or a deployment/release gate. Those belong to the owning
 source or a separately reviewed integration contract.
