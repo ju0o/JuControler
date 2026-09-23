@@ -76,6 +76,11 @@ export async function loadProjectStatus(currentPath, projectIdOrOptions, options
 
 export async function loadProjectStatusBoard(registryPath, options = {}) {
   const projects = await loadProjectRegistryEntries(registryPath);
+  const projectIds = new Set();
+  for (const { projectId } of projects) {
+    if (projectIds.has(projectId)) throw new TypeError(`Invalid project registry: projectId ${projectId} is duplicated`);
+    projectIds.add(projectId);
+  }
   return Promise.all(projects.map(({ projectId, dataRoot }) => loadProjectStatus(
     join(dataRoot, 'current.json'),
     projectId,

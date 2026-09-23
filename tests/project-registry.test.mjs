@@ -149,3 +149,9 @@ test('loads the read-only status board in registry order', async () => {
     },
   ]);
 });
+
+test('rejects duplicate project IDs when loading the status board', async () => {
+  const path = await fixture(registry([entry('duplicate'), entry('duplicate')]));
+
+  await assert.rejects(() => loadProjectStatusBoard(path), /projectId duplicate is duplicated/);
+});
