@@ -119,6 +119,25 @@ test('returns UNKNOWN and stale for unavailable, malformed, ambiguous, or expire
   });
 });
 
+test('rejects unknown top-level or source fields fail-closed', async () => {
+  for (const snapshot of [
+    status({ command: 'restart' }),
+    status({ source: { kind: 'repository-status-file', id: 'jucontroler/status', token: 'secret' } }),
+    status({ generatedAt: 'yesterday' }),
+  ]) {
+    const result = await loadProjectStatus(await fixture(snapshot), 'jucontroler', { now: '2026-09-23T00:01:00Z' });
+    assert.equal(result.status, 'UNKNOWN');
+    assert.equal(result.reason, 'invalid');
+    assert.equal(result.stale, true);
+  }
+  const canonical = await loadProjectStatus(await fixture(status({
+    status: 'UNKNOWN', generatedAt: '2026-09-23T00:00:00Z', stale: false, sourceRevision: 'abc123', reason: 'source-unknown',
+  })), 'jucontroler', { now: '2026-09-23T00:01:00Z' });
+  assert.equal(canonical.status, 'UNKNOWN');
+  assert.equal(canonical.reason, 'source-unknown');
+  assert.equal(canonical.sourceRevision, 'abc123');
+});
+
 test('loads the read-only status board in registry order', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'jucontroler-board-'));
   const firstRoot = join(directory, 'first');

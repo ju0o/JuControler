@@ -9,6 +9,10 @@ const timestamp = (value) => typeof value === 'string'
   && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(value)
   && Number.isFinite(Date.parse(value));
 
+const fields = new Set(['schema', 'projectId', 'status', 'observedAt', 'generatedAt', 'stale', 'source', 'sourceRevision', 'reason']);
+const sourceFields = new Set(['kind', 'id']);
+const only = (value, allowed) => Object.keys(value).every((key) => allowed.has(key));
+
 const text = (value) => typeof value === 'string' && value.trim() !== '';
 
 const generatedAt = (now) => {
@@ -30,9 +34,10 @@ const unknown = (projectId, now, reason) => ({
 const projection = (value, projectId, now, freshnessMs) => {
   const nowMs = Date.parse(generatedAt(now));
   if (!value || typeof value !== 'object' || Array.isArray(value)) return unknown(projectId, now, 'malformed');
-  if (value.schema !== schema || value.projectId !== projectId || !text(value.status)
+  if (!only(value, fields) || value.schema !== schema || value.projectId !== projectId || !text(value.status)
     || !timestamp(value.observedAt) || !value.source || typeof value.source !== 'object'
-    || Array.isArray(value.source) || !text(value.source.kind) || !text(value.source.id)
+    || Array.isArray(value.source) || !only(value.source, sourceFields) || !text(value.source.kind) || !text(value.source.id)
+    || (value.generatedAt !== undefined && !timestamp(value.generatedAt))
     || (value.stale !== undefined && typeof value.stale !== 'boolean')
     || (value.sourceRevision !== undefined && !text(value.sourceRevision))
     || (value.reason !== undefined && !text(value.reason))
