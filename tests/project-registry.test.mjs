@@ -42,9 +42,31 @@ test('fails closed for missing or invalid explicit entries', async (t) => {
     const path = await fixture(registry([invalidEntry]));
     await assert.rejects(() => loadProjectRegistry(path, 'jucontroler'), /must be absolute/);
   });
+  await t.test('relative dataRoot', async () => {
+    const invalidEntry = { ...entry(), dataRoot: 'data/jucontroler' };
+    const path = await fixture(registry([invalidEntry]));
+    await assert.rejects(() => loadProjectRegistry(path, 'jucontroler'), /dataRoot must be absolute/);
+  });
   await t.test('missing sourceRef', async () => {
     const invalidEntry = { ...entry(), sourceRef: undefined };
     const path = await fixture(registry([invalidEntry]));
     await assert.rejects(() => loadProjectRegistry(path, 'jucontroler'), /sourceRef must be/);
+  });
+  await t.test('duplicate project IDs', async () => {
+    const path = await fixture(registry([entry(), entry()]));
+    await assert.rejects(() => loadProjectRegistry(path, 'jucontroler'), /is duplicated/);
+  });
+  await t.test('malformed registry JSON', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'jucontroler-registry-'));
+    const path = join(directory, 'registry.json');
+    await writeFile(path, '{"projects":');
+    await assert.rejects(() => loadProjectRegistry(path, 'jucontroler'), /Unable to read project registry/);
+  });
+  await t.test('unreadable registry path', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'jucontroler-registry-'));
+    await assert.rejects(
+      () => loadProjectRegistry(join(directory, 'missing.json'), 'jucontroler'),
+      /Unable to read project registry/
+    );
   });
 });
