@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ju0o.github.io/JuControler/schemas/project-status.v1.json",
+  "title": "JuControler project status projection",
+  "description": "A read-only projection of source-owned project status. The source owns status; JuControler owns only projection metadata and must not mutate or infer source state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "projectId",
+    "status",
+    "observedAt",
+    "generatedAt",
+    "stale",
+    "source"
+  ],
+  "properties": {
+    "schema": {
+      "const": "project-status.v1",
+      "description": "Projection contract identifier; owned by the contract, not the source."
+    },
+    "projectId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable project identifier owned by the project repository/source."
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opaque source-reported status. UNKNOWN is required when the source is missing, invalid, ambiguous, or contradictory; consumers must preserve unrecognized values."
+    },
+    "observedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC RFC 3339 time when the source observed status; source-owned evidence, not projection generation time."
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC RFC 3339 time when this read-only projection was generated."
+    },
+    "stale": {
+      "type": "boolean",
+      "description": "Whether the source observation exceeds its freshness limit; does not change or infer status."
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Source kind whose owner defines status vocabulary and freshness rules."
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable canonical source identifier; credentials and private payloads are not permitted."
+        }
+      },
+      "description": "Canonical source authority for status; reads are allowed, writes and command dispatch are not."
+    },
+    "sourceRevision": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional source-owned revision, release, or snapshot identifier."
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional bounded machine-readable reason for UNKNOWN or stale; must not invent status."
+    }
+  }
+}
