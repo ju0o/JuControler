@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ju0o.github.io/JuControler/schemas/create-skill-registry.v1.json",
+  "title": "JuControler Create Skill registry",
+  "description": "Read-only registry of Create Skill entries, one per target agent and the supervisor. Registration describes a skill; it does not install, run, or authorize it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "skills"],
+  "properties": {
+    "schema": {
+      "const": "create-skill-registry.v1",
+      "description": "Registry contract identifier."
+    },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Create Skill entries; agentId is unique across entries.",
+      "items": { "$ref": "#/$defs/skill" }
+    }
+  },
+  "$defs": {
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agentId", "skillId", "permissions"],
+      "properties": {
+        "agentId": {
+          "enum": ["claude-code", "codex", "opencode", "cursor", "commandcode", "cline", "grok", "supervisor"],
+          "description": "Target agent runtime, or the supervisor. Integration targets, not certified runtime support."
+        },
+        "skillId": {
+          "type": "string",
+          "pattern": "^create-skill\\.[a-z0-9-]+$",
+          "description": "Stable identifier, create-skill.<agentId>."
+        },
+        "permissions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["filesystem", "repository", "network", "dispatch", "install", "verdict"],
+          "description": "Explicit read-only permissions. Every field is fixed; there is no writable variant.",
+          "properties": {
+            "filesystem": {
+              "const": "read-only",
+              "description": "May read project files; must not create, modify, or delete them."
+            },
+            "repository": {
+              "const": "read-only",
+              "description": "May read Git history and state; must not commit, push, reset, or change refs."
+            },
+            "network": {
+              "const": "none",
+              "description": "Offline; no outbound connections."
+            },
+            "dispatch": {
+              "const": false,
+              "description": "Must not dispatch, send to, or control agents, runtimes, or managed work."
+            },
+            "install": {
+              "const": false,
+              "description": "Must not install or write skills into any agent's skill directory or configuration."
+            },
+            "verdict": {
+              "const": false,
+              "description": "Must not issue PASS / CHANGES / OWNER_REQUIRED; acceptance belongs to QA and independent Verification."
+            }
+          }
+        }
+      }
+    }
+  }
+}
