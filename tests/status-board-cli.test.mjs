@@ -56,7 +56,41 @@ test('prints the canonical board projection without writing', async () => {
   assert.equal(await readFile(path, 'utf8'), registryBefore);
 });
 
+test('--project-id prints only the selected project', async () => {
+  const { directory, path } = await fixture([]);
+  await writeFile(path, JSON.stringify({ projects: [entry('a', join(directory, 'a')), entry('b', join(directory, 'b'))] }));
+  const { code, stdout, stderr } = await run(path, '--project-id', 'b');
+  assert.equal(code, 0, stderr);
+  const board = JSON.parse(stdout);
+  assert.deepEqual(board.map(({ projectId, status }) => ({ projectId, status })), [{ projectId: 'b', status: 'UNKNOWN' }]);
+  assert.equal(board[0].source.id, 'repository-status/b');
+  assert.equal(stdout, `${JSON.stringify(board, null, 2)}\n`);
+});
+
 test('fails nonzero with no stdout for unavailable or invalid registries', async (t) => {
+  await t.test('unknown --project-id', async () => {
+    const { path } = await fixture([entry('a', '/data/a')]);
+    const { code, stdout, stderr } = await run(path, '--project-id', 'nope');
+    assert.equal(code, 1);
+    assert.equal(stdout, '');
+    assert.match(stderr, /Unknown projectId: nope/);
+  });
+  await t.test('--project-id still rejects duplicate registries', async () => {
+    const { path } = await fixture([entry('a', '/data/a'), entry('dup', '/data/dup'), entry('dup', '/data/dup')]);
+    const { code, stdout, stderr } = await run(path, '--project-id', 'a');
+    assert.equal(code, 1);
+    assert.equal(stdout, '');
+    assert.match(stderr, /is duplicated/);
+  });
+  for (const args of [['--project-id'], ['--project-id', ''], ['--bogus'], ['x.json', 'y.json']]) {
+    await t.test(`bad arguments ${JSON.stringify(args)}`, async () => {
+      const { path } = await fixture([]);
+      const { code, stdout } = await run(...(args[0] === 'x.json' ? args : [path, ...args]));
+      assert.equal(code, 2);
+      assert.equal(stdout, '');
+    });
+  }
+
   await t.test('missing argument', async () => {
     const { code, stdout } = await run();
     assert.notEqual(code, 0);
