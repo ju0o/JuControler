@@ -91,9 +91,9 @@ export async function loadProjectStatusBoard(registryPath, { projectId: selected
     if (!projectIds.has(selected)) throw new TypeError(`Unknown projectId: ${selected}`);
     projects = projects.filter(({ projectId }) => projectId === selected);
   }
-  return Promise.all(projects.map(({ projectId, dataRoot, sourceRef }) => loadProjectStatus(
+  return Promise.all(projects.map(({ projectId, dataRoot, sourceRef, freshnessMs }) => loadProjectStatus(
     join(dataRoot, 'current.json'),
     projectId,
-    { ...options, sourceRef },
+    freshnessMs === undefined ? { ...options, sourceRef } : { ...options, sourceRef, maxAgeMs: freshnessMs },
   )));
 }

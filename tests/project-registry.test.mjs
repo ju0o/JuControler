@@ -190,3 +190,30 @@ test('rejects duplicate project IDs when loading the status board', async () => 
 
   await assert.rejects(() => loadProjectStatusBoard(path), /projectId duplicate is duplicated/);
 });
+
+test('rejects negative or non-numeric registry freshnessMs', async () => {
+  for (const freshnessMs of [-1, '60000', null, 'Infinity']) {
+    const path = await fixture(registry([{ ...entry(), freshnessMs }]));
+    await assert.rejects(() => loadProjectRegistry(path, 'jucontroler'), /freshnessMs must be a nonnegative number/);
+  }
+  const path = await fixture(registry([{ ...entry(), freshnessMs: 0 }]));
+  assert.equal((await loadProjectRegistry(path, 'jucontroler')).freshnessMs, 0);
+});
+
+test('board applies each registry entry freshnessMs over the caller default', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'jucontroler-board-'));
+  const registryPath = join(directory, 'registry.json');
+  const projects = [['strict', 30000], ['lenient', 600000], ['default', undefined]];
+  for (const [projectId] of projects) {
+    await mkdir(join(directory, projectId));
+    await writeFile(join(directory, projectId, 'current.json'), JSON.stringify(status({ projectId })));
+  }
+  await writeFile(registryPath, JSON.stringify(registry(projects.map(([projectId, freshnessMs]) => (
+    { ...entry(projectId), dataRoot: join(directory, projectId), freshnessMs }
+  )))));
+
+  const board = await loadProjectStatusBoard(registryPath, { now: '2026-09-23T00:01:00Z', maxAgeMs: 120000 });
+  assert.deepEqual(board.map(({ projectId, stale }) => [projectId, stale]), [
+    ['strict', true], ['lenient', false], ['default', false],
+  ]);
+});

@@ -16,6 +16,9 @@ const validateEntry = (entry, index) => {
   for (const field of requiredFields) nonEmptyString(entry[field], `projects[${index}].${field}`);
   if (!isAbsolute(entry.workspaceRoot)) invalid(`projects[${index}].workspaceRoot must be absolute`);
   if (!isAbsolute(entry.dataRoot)) invalid(`projects[${index}].dataRoot must be absolute`);
+  if (entry.freshnessMs !== undefined && !(Number.isFinite(entry.freshnessMs) && entry.freshnessMs >= 0)) {
+    invalid(`projects[${index}].freshnessMs must be a nonnegative number`);
+  }
   return entry;
 };
 
