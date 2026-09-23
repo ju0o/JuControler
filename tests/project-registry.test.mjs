@@ -320,3 +320,49 @@ test('board projects a juceipt-receipt entry via the JuCeipt adapter in registry
   assert.equal((await select({ freshnessMs: 1000 }))[0].reason, 'stale');
   assert.equal((await select({ now: '2026-09-22T23:59:00Z' }))[0].reason, 'future-generated-at');
 });
+
+test('board projects agent-relay-board entries by runner or lane id, read-only', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'jucontroler-board-'));
+  const registryPath = join(directory, 'registry.json');
+  const snapshot = {
+    kind: 'BOARD',
+    observedAt: '2026-09-23T00:00:00Z',
+    runner: { day: 'IDLE', night: { state: 'RUNNING' } },
+    lanes: [{ id: 'lane', state: 'HOLD', holds: [{}], latestVersion: 'v9' }],
+  };
+  for (const name of ['relay', 'bad']) await mkdir(join(directory, name));
+  await writeFile(join(directory, 'relay', 'current.json'), JSON.stringify(snapshot));
+  await writeFile(join(directory, 'bad', 'current.json'), JSON.stringify({ kind: 'NOT_BOARD', lanes: [] }));
+  const relay = (projectId, name = 'relay') => ({ ...entry(projectId), dataRoot: join(directory, name), sourceKind: 'agent-relay-board' });
+  await writeFile(registryPath, JSON.stringify(registry([
+    relay('agent-relay'), relay('lane'), relay('absent'), relay('bad', 'bad'), relay('gone', 'gone'),
+  ])));
+  const before = await readdir(directory, { recursive: true });
+
+  const board = await loadProjectStatusBoard(registryPath, { now: '2026-09-23T00:01:00Z' });
+  assert.deepEqual(board[1], {
+    schema: 'project-status.v1',
+    projectId: 'lane',
+    status: 'HOLD',
+    observedAt: '2026-09-23T00:00:00Z',
+    generatedAt: '2026-09-23T00:01:00.000Z',
+    stale: false,
+    source: { kind: 'agent-relay-board', id: 'agent-relay/lanes/lane' },
+    sourceRevision: 'v9',
+    reason: 'hold',
+  });
+  assert.deepEqual(board.map((row) => [row.projectId, row.status, row.stale, row.reason, row.source.id]), [
+    ['agent-relay', 'day=IDLE;night=RUNNING', false, undefined, 'agent-relay/runner'],
+    ['lane', 'HOLD', false, 'hold', 'agent-relay/lanes/lane'],
+    ['absent', 'UNKNOWN', true, 'missing-lane', 'agent-relay/lanes/absent'],
+    ['bad', 'UNKNOWN', true, 'invalid', 'agent-relay/lanes/bad'],
+    ['gone', 'UNKNOWN', true, 'unavailable', 'agent-relay/lanes/gone'],
+  ]);
+  assert.deepEqual(await readdir(directory, { recursive: true }), before);
+
+  const select = (extra) => loadProjectStatusBoard(registryPath, { projectId: 'lane', now: '2026-09-23T00:01:00Z', ...extra });
+  assert.equal((await select({ freshnessMs: -1 }))[0].reason, 'invalid-request');
+  const [stale] = await select({ freshnessMs: 1000 });
+  assert.equal(stale.stale, true);
+  assert.equal(stale.reason, 'hold');
+});

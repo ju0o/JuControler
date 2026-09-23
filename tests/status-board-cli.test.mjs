@@ -161,3 +161,42 @@ test('fails nonzero with no stdout for unavailable or invalid registries', async
     assert.match(stderr, /is duplicated/);
   });
 });
+
+test('prints a saved Agent Relay board source by runner and lane without writing', async () => {
+  const { directory, path } = await fixture([]);
+  const relayRoot = join(directory, 'relay');
+  await mkdir(relayRoot);
+  const observedAt = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  await writeFile(join(relayRoot, 'current.json'), JSON.stringify({
+    kind: 'BOARD', observedAt, runner: { day: 'IDLE', night: 'RUNNING' }, lanes: [{ id: 'lane', state: 'RUNNING' }],
+  }));
+  await writeFile(path, JSON.stringify({ projects: [
+    { ...entry('agent-relay', relayRoot), sourceKind: 'agent-relay-board' },
+    { ...entry('lane', relayRoot), sourceKind: 'agent-relay-board' },
+    { ...entry('missing', join(directory, 'none')), sourceKind: 'agent-relay-board' },
+  ] }));
+  const before = await readdir(directory, { recursive: true });
+
+  const { code, stdout, stderr } = await run(path);
+  assert.equal(code, 0, stderr);
+  assert.deepEqual(JSON.parse(stdout).map((row) => [row.projectId, row.status, row.stale, row.reason, row.source]), [
+    ['agent-relay', 'day=IDLE;night=RUNNING', false, undefined, { kind: 'agent-relay-board', id: 'agent-relay/runner' }],
+    ['lane', 'RUNNING', false, undefined, { kind: 'agent-relay-board', id: 'agent-relay/lanes/lane' }],
+    ['missing', 'UNKNOWN', true, 'unavailable', { kind: 'agent-relay-board', id: 'agent-relay/lanes/missing' }],
+  ]);
+  assert.deepEqual(await readdir(directory, { recursive: true }), before);
+});
+
+test('offline e2e script prints exactly one passing JSON result line and cleans up', async () => {
+  const parent = await mkdtemp(join(tmpdir(), 'jucontroler-e2e-parent-'));
+  const script = new URL('../scripts/e2e.sh', import.meta.url).pathname;
+  const { stdout } = await promisify(execFile)('bash', [script], { env: { ...process.env, TMPDIR: parent } });
+  const lines = stdout.trim().split('\n');
+  assert.equal(lines.length, 1);
+  const result = JSON.parse(lines[0]);
+  assert.equal(result.schema, 'jucontroler.e2e.v1');
+  assert.equal(result.ok, true);
+  assert.equal(result.projects, 6);
+  assert.equal(result.statuses['agent-relay'], 'day=IDLE;night=RUNNING');
+  assert.deepEqual(await readdir(parent), []);
+});

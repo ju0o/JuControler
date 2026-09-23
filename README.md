@@ -26,7 +26,33 @@ assigned to a single required orchestration-brain process does not.
 
 **Current status: V0 NOT CERTIFIED.** This checkout does not yet contain an
 implemented integration runtime or a certified end-to-end loop under the
-current direction. There are no installation or execution instructions yet.
+current direction. The only runnable surface is the read-only status board
+below.
+
+## Quickstart
+
+Requires Node.js 22+ and bash; no install step, no network. Run from the
+repository root:
+
+```sh
+bash scripts/e2e.sh
+node --test tests/project-registry.test.mjs tests/status-board-cli.test.mjs
+node scripts/status-board.mjs <registry.json> [--project-id <id>]
+```
+
+`scripts/e2e.sh` builds a temporary registry with one saved source per
+`sourceKind` (`repository-status-file`, `juplan-status`, `juceipt-receipt`,
+`agent-relay-board`), runs the status board against it, deletes the temporary
+directory, and prints exactly one JSON line, for example:
+
+```json
+{"schema":"jucontroler.e2e.v1","ok":true,"projects":6,"statuses":{"repo":"READY","plan":"PLANNING","receipt":"ACCEPTED","agent-relay":"day=IDLE;night=RUNNING","lane":"RUNNING","missing":"UNKNOWN"}}
+```
+
+It exits `0` only when `ok` is `true`. For an `agent-relay-board` registry
+entry, `<dataRoot>/current.json` is a saved `night board` snapshot and the
+entry's `projectId` selects the runner (`agent-relay`) or the lane with that
+id; a missing lane is `UNKNOWN` with reason `missing-lane`.
 
 New integration source belongs in `src/`, runtime/install tooling in `scripts/`,
 and tests in `tests/`. [Public documentation](docs/README.md) is reviewed

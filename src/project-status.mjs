@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { loadProjectRegistryEntries } from './project-registry.mjs';
 import { projectJuPlanStatus } from './adapters/juplan.mjs';
 import { projectJuCeiptReceipt } from './adapters/juceipt.mjs';
+import { projectAgentRelayBoard } from './adapters/agent-relay.mjs';
 
 const schema = 'project-status.v1';
 const sourceKind = 'repository-status-file';
@@ -98,9 +99,40 @@ const adapterLoader = (project) => async (path, projectId, { now = new Date(), m
   }
 };
 
+// Saved Agent Relay `night board` JSON at <dataRoot>/current.json; the registry projectId selects
+// the runner (`agent-relay`) or the lane with that id. Read-only; anything unusable becomes UNKNOWN.
+const loadAgentRelayBoard = async (path, projectId, { now = new Date(), maxAgeMs, freshnessMs } = {}) => {
+  const generated = generatedAt(now);
+  const limit = maxAgeMs ?? freshnessMs;
+  const unknownEntry = (reason) => ({
+    schema,
+    projectId,
+    status: 'UNKNOWN',
+    observedAt: generated,
+    generatedAt: generated,
+    stale: true,
+    source: { kind: 'agent-relay-board', id: projectId === 'agent-relay' ? 'agent-relay/runner' : `agent-relay/lanes/${projectId}` },
+    reason,
+  });
+  if (limit !== undefined && !(Number.isFinite(limit) && limit >= 0)) return unknownEntry('invalid-request');
+  let board;
+  try {
+    board = JSON.parse(await readFile(path, 'utf8'));
+  } catch {
+    return unknownEntry('unavailable');
+  }
+  try {
+    return projectAgentRelayBoard(board, { now: generated, freshnessMs: limit })
+      .find((entry) => entry.projectId === projectId) ?? unknownEntry('missing-lane');
+  } catch {
+    return unknownEntry('invalid');
+  }
+};
+
 const loaders = {
   'juplan-status': adapterLoader(projectJuPlanStatus),
   'juceipt-receipt': adapterLoader(projectJuCeiptReceipt),
+  'agent-relay-board': loadAgentRelayBoard,
 };
 
 export async function loadProjectStatusBoard(registryPath, { projectId: selected, ...options } = {}) {
