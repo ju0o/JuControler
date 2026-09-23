@@ -20,20 +20,20 @@ const generatedAt = (now) => {
   return Number.isFinite(date.getTime()) ? date.toISOString() : new Date().toISOString();
 };
 
-const unknown = (projectId, now, reason) => ({
+const unknown = (projectId, now, reason, sourceRef) => ({
   schema,
   projectId: text(projectId) ? projectId : 'UNKNOWN',
   status: 'UNKNOWN',
   observedAt: generatedAt(now),
   generatedAt: generatedAt(now),
   stale: true,
-  source: { kind: sourceKind, id: text(projectId) ? projectId : 'UNKNOWN' },
+  source: { kind: sourceKind, id: text(sourceRef) ? sourceRef : text(projectId) ? projectId : 'UNKNOWN' },
   reason,
 });
 
-const projection = (value, projectId, now, freshnessMs) => {
+const projection = (value, projectId, now, freshnessMs, sourceRef) => {
   const nowMs = Date.parse(generatedAt(now));
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return unknown(projectId, now, 'malformed');
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return unknown(projectId, now, 'malformed', sourceRef);
   if (!only(value, fields) || value.schema !== schema || value.projectId !== projectId || !text(value.status)
     || !timestamp(value.observedAt) || !value.source || typeof value.source !== 'object'
     || Array.isArray(value.source) || !only(value.source, sourceFields) || !text(value.source.kind) || !text(value.source.id)
@@ -42,7 +42,7 @@ const projection = (value, projectId, now, freshnessMs) => {
     || (value.sourceRevision !== undefined && !text(value.sourceRevision))
     || (value.reason !== undefined && !text(value.reason))
     || Date.parse(value.observedAt) > nowMs) {
-    return unknown(projectId, now, 'invalid');
+    return unknown(projectId, now, 'invalid', sourceRef);
   }
 
   const generated = generatedAt(now);
@@ -67,15 +67,16 @@ export async function loadProjectStatus(currentPath, projectIdOrOptions, options
   const projectId = typeof projectIdOrOptions === 'string'
     ? projectIdOrOptions : optionsObject.projectId;
   const now = optionsObject.now ?? new Date();
+  const { sourceRef } = optionsObject;
   const freshnessMs = optionsObject.maxAgeMs ?? optionsObject.freshnessMs ?? 5 * 60 * 1000;
   if (!Number.isFinite(freshnessMs) || freshnessMs < 0 || !text(projectId)) {
-    return unknown(projectId, now, 'invalid-request');
+    return unknown(projectId, now, 'invalid-request', sourceRef);
   }
 
   try {
-    return projection(JSON.parse(await readFile(currentPath, 'utf8')), projectId, now, freshnessMs);
+    return projection(JSON.parse(await readFile(currentPath, 'utf8')), projectId, now, freshnessMs, sourceRef);
   } catch {
-    return unknown(projectId, now, 'unavailable');
+    return unknown(projectId, now, 'unavailable', sourceRef);
   }
 }
 
@@ -86,9 +87,9 @@ export async function loadProjectStatusBoard(registryPath, options = {}) {
     if (projectIds.has(projectId)) throw new TypeError(`Invalid project registry: projectId ${projectId} is duplicated`);
     projectIds.add(projectId);
   }
-  return Promise.all(projects.map(({ projectId, dataRoot }) => loadProjectStatus(
+  return Promise.all(projects.map(({ projectId, dataRoot, sourceRef }) => loadProjectStatus(
     join(dataRoot, 'current.json'),
     projectId,
-    options,
+    { ...options, sourceRef },
   )));
 }

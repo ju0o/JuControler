@@ -163,10 +163,26 @@ test('loads the read-only status board in registry order', async () => {
       observedAt: '2026-09-23T00:01:00.000Z',
       generatedAt: '2026-09-23T00:01:00.000Z',
       stale: true,
-      source: { kind: 'repository-status-file', id: 'second' },
+      source: { kind: 'repository-status-file', id: 'repository-status/jucontroler' },
       reason: 'unavailable',
     },
   ]);
+});
+
+test('invalid board projections retain the registry sourceRef', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'jucontroler-board-'));
+  const registryPath = join(directory, 'registry.json');
+  const snapshot = JSON.stringify(status({ command: 'restart' }));
+  await writeFile(join(directory, 'current.json'), snapshot);
+  await writeFile(registryPath, JSON.stringify(registry([
+    { ...entry(), dataRoot: directory, sourceRef: 'repository-status/canonical' },
+  ])));
+
+  const [result] = await loadProjectStatusBoard(registryPath, { now: '2026-09-23T00:01:00Z' });
+  assert.equal(result.status, 'UNKNOWN');
+  assert.equal(result.reason, 'invalid');
+  assert.deepEqual(result.source, { kind: 'repository-status-file', id: 'repository-status/canonical' });
+  assert.equal(await readFile(join(directory, 'current.json'), 'utf8'), snapshot);
 });
 
 test('rejects duplicate project IDs when loading the status board', async () => {
