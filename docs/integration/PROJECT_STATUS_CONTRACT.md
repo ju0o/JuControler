@@ -205,6 +205,57 @@ console.log(JSON.stringify(projectJuPlanStatus(saved), null, 2));
 ' juplan-status.json
 ```
 
+## Source: JuCeipt receipt (`juceipt-receipt`)
+
+`src/adapters/juceipt.mjs` exports `projectJuCeiptReceipt(receipt, options)`, a
+pure function that projects one already-parsed, saved JuCeipt receipt JSON
+object into a single `project-status.v1` entry. It does not read files, spawn
+processes, open connections, or write to JuCeipt; the caller reads the file and
+passes the parsed JSON in.
+
+Source fields read (all others are ignored); all are required:
+
+| Source field | Projected to |
+| --- | --- |
+| `acceptance.state` | `status`, verbatim (never remapped). |
+| `generated_at` | `observedAt`; must be a UTC timestamp (`YYYY-MM-DDTHH:MM:SS[.fff]Z`). |
+| `receipt_id` | `sourceRevision`. |
+
+The entry uses `projectId` from the option (default `juceipt`) and
+`source: { "kind": "juceipt-receipt", "id": "juceipt/<projectId>" }`. A
+projected acceptance state is the receipt's own claim; per the consumer rules
+above it is not independent proof of acceptance.
+
+A malformed or incomplete receipt never throws; it fails closed to
+`status: "UNKNOWN"`, `stale: true`, no `sourceRevision`, and `observedAt` equal
+to `generatedAt`:
+
+| `reason` | `status` | When |
+| --- | --- | --- |
+| `malformed` | `UNKNOWN` | The saved value is not a JSON object. |
+| `missing-receipt-id` | `UNKNOWN` | `receipt_id` is missing or not non-empty text. |
+| `missing-acceptance` | `UNKNOWN` | `acceptance` is missing or not an object. |
+| `missing-acceptance-state` | `UNKNOWN` | `acceptance.state` is missing or not non-empty text. |
+| `missing-generated-at` | `UNKNOWN` | `generated_at` is missing or not a valid UTC timestamp. |
+| `future-generated-at` | source state | `generated_at` is later than `now`. |
+| `stale` | source state | `now - generated_at` exceeds `freshnessMs`. |
+
+Options are `projectId`, `now`, and `freshnessMs` (default `300000`), with the
+same meaning as for the JuPlan adapter. Invalid options throw
+`JuCeiptReceiptError` with a `code` (`invalid-project-id`, `invalid-freshness`,
+`invalid-now`).
+
+Offline usage, from a saved receipt file:
+
+```sh
+node --input-type=module -e '
+import { readFileSync } from "node:fs";
+import { projectJuCeiptReceipt } from "./src/adapters/juceipt.mjs";
+const receipt = JSON.parse(readFileSync(process.argv[1], "utf8"));
+console.log(JSON.stringify(projectJuCeiptReceipt(receipt), null, 2));
+' receipt.json
+```
+
 This contract intentionally does not define commands, retries, source-specific
 status vocabularies, or a deployment/release gate. Those belong to the owning
 source or a separately reviewed integration contract.
