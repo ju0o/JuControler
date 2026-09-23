@@ -2,7 +2,8 @@ import { readFile } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 
 const requiredFields = ['projectId', 'workspaceRoot', 'dataRoot', 'sourceRef'];
-const entryFields = new Set([...requiredFields, 'freshnessMs']);
+const entryFields = new Set([...requiredFields, 'freshnessMs', 'sourceKind']);
+const sourceKinds = new Set(['repository-status-file', 'juplan-status']);
 
 const invalid = (message) => {
   throw new TypeError(`Invalid project registry: ${message}`);
@@ -22,6 +23,9 @@ const validateEntry = (entry, index) => {
   if (!isAbsolute(entry.dataRoot)) invalid(`projects[${index}].dataRoot must be absolute`);
   if (entry.freshnessMs !== undefined && !(Number.isFinite(entry.freshnessMs) && entry.freshnessMs >= 0)) {
     invalid(`projects[${index}].freshnessMs must be a nonnegative number`);
+  }
+  if (entry.sourceKind !== undefined && !sourceKinds.has(entry.sourceKind)) {
+    invalid(`projects[${index}].sourceKind must be one of ${[...sourceKinds].join(', ')}`);
   }
   return entry;
 };

@@ -56,6 +56,27 @@ test('prints the canonical board projection without writing', async () => {
   assert.equal(await readFile(path, 'utf8'), registryBefore);
 });
 
+test('prints a saved JuPlan status source in registry order without writing', async () => {
+  const { directory, path } = await fixture([]);
+  const planRoot = join(directory, 'plan');
+  await mkdir(planRoot);
+  const observedAt = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  await writeFile(join(planRoot, 'current.json'), JSON.stringify({ projectId: 'plan', status: 'PLANNING', observedAt }));
+  await writeFile(path, JSON.stringify({ projects: [
+    { ...entry('missing', join(directory, 'none')), sourceKind: 'juplan-status' },
+    { ...entry('plan', planRoot), sourceKind: 'juplan-status' },
+  ] }));
+  const before = await readdir(directory, { recursive: true });
+
+  const { code, stdout, stderr } = await run(path);
+  assert.equal(code, 0, stderr);
+  assert.deepEqual(JSON.parse(stdout).map((row) => [row.projectId, row.status, row.stale, row.reason, row.source]), [
+    ['missing', 'UNKNOWN', true, 'unavailable', { kind: 'juplan-status', id: 'juplan/missing' }],
+    ['plan', 'PLANNING', false, undefined, { kind: 'juplan-status', id: 'juplan/plan' }],
+  ]);
+  assert.deepEqual(await readdir(directory, { recursive: true }), before);
+});
+
 test('--project-id prints only the selected project', async () => {
   const { directory, path } = await fixture([]);
   await writeFile(path, JSON.stringify({ projects: [entry('a', join(directory, 'a')), entry('b', join(directory, 'b'))] }));

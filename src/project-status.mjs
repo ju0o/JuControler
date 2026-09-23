@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadProjectRegistryEntries } from './project-registry.mjs';
+import { projectJuPlanStatus } from './adapters/juplan.mjs';
 
 const schema = 'project-status.v1';
 const sourceKind = 'repository-status-file';
@@ -80,6 +81,21 @@ export async function loadProjectStatus(currentPath, projectIdOrOptions, options
   }
 }
 
+// Saved JuPlan status JSON at <dataRoot>/current.json; read-only, unreadable or invalid input becomes UNKNOWN.
+async function loadJuPlanStatus(path, projectId, { now = new Date(), maxAgeMs, freshnessMs } = {}) {
+  const options = { projectId, now: generatedAt(now), freshnessMs: maxAgeMs ?? freshnessMs };
+  try {
+    projectJuPlanStatus(undefined, options);
+  } catch {
+    return { ...projectJuPlanStatus(undefined, { projectId, now: options.now }), reason: 'invalid-request' };
+  }
+  try {
+    return projectJuPlanStatus(JSON.parse(await readFile(path, 'utf8')), options);
+  } catch {
+    return { ...projectJuPlanStatus(undefined, options), reason: 'unavailable' };
+  }
+}
+
 export async function loadProjectStatusBoard(registryPath, { projectId: selected, ...options } = {}) {
   let projects = await loadProjectRegistryEntries(registryPath);
   const projectIds = new Set();
@@ -91,9 +107,9 @@ export async function loadProjectStatusBoard(registryPath, { projectId: selected
     if (!projectIds.has(selected)) throw new TypeError(`Unknown projectId: ${selected}`);
     projects = projects.filter(({ projectId }) => projectId === selected);
   }
-  return Promise.all(projects.map(({ projectId, dataRoot, sourceRef, freshnessMs }) => loadProjectStatus(
-    join(dataRoot, 'current.json'),
-    projectId,
-    freshnessMs === undefined ? { ...options, sourceRef } : { ...options, sourceRef, maxAgeMs: freshnessMs },
-  )));
+  return Promise.all(projects.map(({ projectId, dataRoot, sourceRef, freshnessMs, sourceKind }) => {
+    const entryOptions = freshnessMs === undefined ? { ...options, sourceRef } : { ...options, sourceRef, maxAgeMs: freshnessMs };
+    const load = sourceKind === 'juplan-status' ? loadJuPlanStatus : loadProjectStatus;
+    return load(join(dataRoot, 'current.json'), projectId, entryOptions);
+  }));
 }

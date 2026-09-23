@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -226,4 +226,54 @@ test('board applies each registry entry freshnessMs over the caller default', as
   assert.deepEqual(board.map(({ projectId, stale }) => [projectId, stale]), [
     ['strict', true], ['lenient', false], ['default', false],
   ]);
+});
+
+test('board projects a juplan-status entry via the JuPlan adapter in registry order, read-only', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'jucontroler-board-'));
+  const registryPath = join(directory, 'registry.json');
+  const saved = { projectId: 'juplan', status: 'PLANNING', observedAt: '2026-09-23T00:00:00Z', revision: 'r42' };
+  for (const name of ['juplan', 'repo', 'bad']) await mkdir(join(directory, name));
+  await writeFile(join(directory, 'juplan', 'current.json'), JSON.stringify(saved));
+  await writeFile(join(directory, 'repo', 'current.json'), JSON.stringify(status({ projectId: 'repo' })));
+  await writeFile(join(directory, 'bad', 'current.json'), '{"status":');
+  await writeFile(registryPath, JSON.stringify(registry([
+    { ...entry('juplan'), dataRoot: join(directory, 'juplan'), sourceKind: 'juplan-status' },
+    { ...entry('repo'), dataRoot: join(directory, 'repo'), sourceKind: 'repository-status-file' },
+    { ...entry('bad'), dataRoot: join(directory, 'bad'), sourceKind: 'juplan-status' },
+    { ...entry('gone'), dataRoot: join(directory, 'gone'), sourceKind: 'juplan-status' },
+    { ...entry('mismatch'), dataRoot: join(directory, 'juplan'), sourceKind: 'juplan-status' },
+  ])));
+  const before = await readdir(directory, { recursive: true });
+
+  const board = await loadProjectStatusBoard(registryPath, { now: '2026-09-23T00:01:00Z' });
+  assert.deepEqual(board[0], {
+    schema: 'project-status.v1',
+    projectId: 'juplan',
+    status: 'PLANNING',
+    observedAt: '2026-09-23T00:00:00Z',
+    generatedAt: '2026-09-23T00:01:00.000Z',
+    stale: false,
+    source: { kind: 'juplan-status', id: 'juplan/juplan' },
+    sourceRevision: 'r42',
+  });
+  assert.deepEqual(board.map((row) => [row.projectId, row.status, row.stale, row.reason, row.source.kind]), [
+    ['juplan', 'PLANNING', false, undefined, 'juplan-status'],
+    ['repo', 'SOURCE_DEFINED', false, undefined, 'repository-status-file'],
+    ['bad', 'UNKNOWN', true, 'unavailable', 'juplan-status'],
+    ['gone', 'UNKNOWN', true, 'unavailable', 'juplan-status'],
+    ['mismatch', 'UNKNOWN', true, 'project-mismatch', 'juplan-status'],
+  ]);
+  assert.deepEqual(await readdir(directory, { recursive: true }), before);
+
+  const select = (extra) => loadProjectStatusBoard(registryPath, { projectId: 'juplan', now: '2026-09-23T00:01:00Z', ...extra });
+  const [invalid] = await select({ freshnessMs: -1 });
+  assert.equal(invalid.status, 'UNKNOWN');
+  assert.equal(invalid.reason, 'invalid-request');
+  assert.equal((await select({ freshnessMs: 1000 }))[0].reason, 'stale');
+});
+
+test('rejects unknown registry sourceKind fail-closed', async () => {
+  const path = await fixture(registry([{ ...entry(), sourceKind: 'shell-command' }]));
+  await assert.rejects(() => loadProjectRegistry(path, 'jucontroler'), /sourceKind must be one of/);
+  await assert.rejects(() => loadProjectStatusBoard(path), /sourceKind must be one of/);
 });
