@@ -200,6 +200,16 @@ test('rejects negative or non-numeric registry freshnessMs', async () => {
   assert.equal((await loadProjectRegistry(path, 'jucontroler')).freshnessMs, 0);
 });
 
+test('rejects unknown top-level or entry registry fields fail-closed', async () => {
+  const topLevel = await fixture({ ...registry([entry()]), command: 'restart' });
+  await assert.rejects(() => loadProjectRegistry(topLevel, 'jucontroler'), /command is not a known field/);
+  const entryField = await fixture(registry([{ ...entry(), token: 'secret' }]));
+  await assert.rejects(() => loadProjectRegistry(entryField, 'jucontroler'), /projects\[0\]\.token is not a known field/);
+  await assert.rejects(() => loadProjectStatusBoard(entryField), /projects\[0\]\.token is not a known field/);
+  const valid = await fixture(registry([{ ...entry(), freshnessMs: 60000 }]));
+  assert.deepEqual(await loadProjectRegistry(valid, 'jucontroler'), { ...entry(), freshnessMs: 60000 });
+});
+
 test('board applies each registry entry freshnessMs over the caller default', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'jucontroler-board-'));
   const registryPath = join(directory, 'registry.json');

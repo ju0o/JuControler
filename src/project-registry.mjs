@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 
 const requiredFields = ['projectId', 'workspaceRoot', 'dataRoot', 'sourceRef'];
+const entryFields = new Set([...requiredFields, 'freshnessMs']);
 
 const invalid = (message) => {
   throw new TypeError(`Invalid project registry: ${message}`);
@@ -13,6 +14,9 @@ const nonEmptyString = (value, field) => {
 
 const validateEntry = (entry, index) => {
   if (!entry || typeof entry !== 'object' || Array.isArray(entry)) invalid(`projects[${index}] must be an object`);
+  for (const field of Object.keys(entry)) {
+    if (!entryFields.has(field)) invalid(`projects[${index}].${field} is not a known field`);
+  }
   for (const field of requiredFields) nonEmptyString(entry[field], `projects[${index}].${field}`);
   if (!isAbsolute(entry.workspaceRoot)) invalid(`projects[${index}].workspaceRoot must be absolute`);
   if (!isAbsolute(entry.dataRoot)) invalid(`projects[${index}].dataRoot must be absolute`);
@@ -32,6 +36,9 @@ export async function loadProjectRegistryEntries(registryPath) {
 
   if (!registry || typeof registry !== 'object' || !Array.isArray(registry.projects)) {
     invalid('projects must be an array');
+  }
+  for (const field of Object.keys(registry)) {
+    if (field !== 'projects') invalid(`${field} is not a known field`);
   }
 
   return registry.projects.map(validateEntry);
