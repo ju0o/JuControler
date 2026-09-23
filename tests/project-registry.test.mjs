@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadProjectRegistry } from '../src/project-registry.mjs';
+import { loadProjectStatus } from '../src/project-status.mjs';
 
 const registry = (projects) => ({ projects });
 const entry = (projectId = 'jucontroler') => ({
@@ -68,5 +69,52 @@ test('fails closed for missing or invalid explicit entries', async (t) => {
       () => loadProjectRegistry(join(directory, 'missing.json'), 'jucontroler'),
       /Unable to read project registry/
     );
+  });
+});
+
+const status = (overrides = {}) => ({
+  schema: 'project-status.v1',
+  projectId: 'jucontroler',
+  status: 'SOURCE_DEFINED',
+  observedAt: '2026-09-23T00:00:00Z',
+  source: { kind: 'repository-status-file', id: 'jucontroler/status' },
+  ...overrides,
+});
+
+test('loads one source-owned status projection read-only and preserves opaque status', async () => {
+  const path = await fixture(status());
+  const before = await readFile(path, 'utf8');
+
+  assert.deepEqual(await loadProjectStatus(path, 'jucontroler', {
+    now: '2026-09-23T00:01:00Z',
+    freshnessMs: 120000,
+  }), {
+    ...status(),
+    generatedAt: '2026-09-23T00:01:00.000Z',
+    stale: false,
+  });
+  assert.equal(await readFile(path, 'utf8'), before);
+});
+
+test('returns UNKNOWN and stale for unavailable, malformed, ambiguous, or expired observations', async (t) => {
+  await t.test('missing file', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'jucontroler-status-'));
+    const result = await loadProjectStatus(join(directory, 'current.json'), 'jucontroler');
+    assert.equal(result.status, 'UNKNOWN');
+    assert.equal(result.stale, true);
+  });
+  await t.test('malformed and ambiguous files', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'jucontroler-status-'));
+    const malformed = join(directory, 'malformed.json');
+    await writeFile(malformed, '{"schema":');
+    const ambiguous = await fixture(status({ status: '' }));
+    assert.equal((await loadProjectStatus(malformed, 'jucontroler')).status, 'UNKNOWN');
+    assert.equal((await loadProjectStatus(ambiguous, 'jucontroler')).status, 'UNKNOWN');
+  });
+  await t.test('expired observation preserves source status', async () => {
+    const path = await fixture(status());
+    const result = await loadProjectStatus(path, { projectId: 'jucontroler', now: '2026-09-23T00:03:00Z', freshnessMs: 60000 });
+    assert.equal(result.status, 'SOURCE_DEFINED');
+    assert.equal(result.stale, true);
   });
 });
