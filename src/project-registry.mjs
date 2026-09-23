@@ -19,9 +19,7 @@ const validateEntry = (entry, index) => {
   return entry;
 };
 
-export async function loadProjectRegistry(registryPath, projectId) {
-  nonEmptyString(projectId, 'projectId');
-
+export async function loadProjectRegistryEntries(registryPath) {
   let registry;
   try {
     registry = JSON.parse(await readFile(registryPath, 'utf8'));
@@ -33,7 +31,13 @@ export async function loadProjectRegistry(registryPath, projectId) {
     invalid('projects must be an array');
   }
 
-  const entries = registry.projects.map(validateEntry);
+  return registry.projects.map(validateEntry);
+}
+
+export async function loadProjectRegistry(registryPath, projectId) {
+  nonEmptyString(projectId, 'projectId');
+
+  const entries = await loadProjectRegistryEntries(registryPath);
   const matches = entries.filter((entry) => entry.projectId === projectId);
   if (matches.length === 0) invalid(`projectId ${projectId} was not found`);
   if (matches.length > 1) invalid(`projectId ${projectId} is duplicated`);

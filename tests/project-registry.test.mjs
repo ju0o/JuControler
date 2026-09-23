@@ -1,10 +1,10 @@
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadProjectRegistry } from '../src/project-registry.mjs';
-import { loadProjectStatus } from '../src/project-status.mjs';
+import { loadProjectStatus, loadProjectStatusBoard } from '../src/project-status.mjs';
 
 const registry = (projects) => ({ projects });
 const entry = (projectId = 'jucontroler') => ({
@@ -117,4 +117,35 @@ test('returns UNKNOWN and stale for unavailable, malformed, ambiguous, or expire
     assert.equal(result.status, 'SOURCE_DEFINED');
     assert.equal(result.stale, true);
   });
+});
+
+test('loads the read-only status board in registry order', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'jucontroler-board-'));
+  const firstRoot = join(directory, 'first');
+  const secondRoot = join(directory, 'second');
+  const registryPath = join(directory, 'registry.json');
+  const first = status({ projectId: 'first', status: 'OPAQUE_SOURCE_STATE' });
+  await mkdir(firstRoot, { recursive: true });
+  await writeFile(join(firstRoot, 'current.json'), JSON.stringify(first));
+  await writeFile(registryPath, JSON.stringify(registry([
+    { ...entry('first'), dataRoot: firstRoot },
+    { ...entry('second'), dataRoot: secondRoot },
+  ])));
+
+  assert.deepEqual(await loadProjectStatusBoard(registryPath, {
+    now: '2026-09-23T00:01:00Z',
+    freshnessMs: 120000,
+  }), [
+    { ...first, generatedAt: '2026-09-23T00:01:00.000Z', stale: false },
+    {
+      schema: 'project-status.v1',
+      projectId: 'second',
+      status: 'UNKNOWN',
+      observedAt: '2026-09-23T00:01:00.000Z',
+      generatedAt: '2026-09-23T00:01:00.000Z',
+      stale: true,
+      source: { kind: 'repository-status-file', id: 'second' },
+      reason: 'unavailable',
+    },
+  ]);
 });

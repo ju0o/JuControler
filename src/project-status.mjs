@@ -1,4 +1,6 @@
 import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { loadProjectRegistryEntries } from './project-registry.mjs';
 
 const schema = 'project-status.v1';
 const sourceKind = 'repository-status-file';
@@ -70,4 +72,13 @@ export async function loadProjectStatus(currentPath, projectIdOrOptions, options
   } catch {
     return unknown(projectId, now, 'unavailable');
   }
+}
+
+export async function loadProjectStatusBoard(registryPath, options = {}) {
+  const projects = await loadProjectRegistryEntries(registryPath);
+  return Promise.all(projects.map(({ projectId, dataRoot }) => loadProjectStatus(
+    join(dataRoot, 'current.json'),
+    projectId,
+    options,
+  )));
 }
