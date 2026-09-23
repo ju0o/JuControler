@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadProjectRegistryEntries } from './project-registry.mjs';
 import { projectJuPlanStatus } from './adapters/juplan.mjs';
+import { projectJuCeiptReceipt } from './adapters/juceipt.mjs';
 
 const schema = 'project-status.v1';
 const sourceKind = 'repository-status-file';
@@ -81,20 +82,26 @@ export async function loadProjectStatus(currentPath, projectIdOrOptions, options
   }
 }
 
-// Saved JuPlan status JSON at <dataRoot>/current.json; read-only, unreadable or invalid input becomes UNKNOWN.
-async function loadJuPlanStatus(path, projectId, { now = new Date(), maxAgeMs, freshnessMs } = {}) {
+// Saved adapter source JSON (JuPlan status or JuCeipt receipt) at <dataRoot>/current.json;
+// read-only, unreadable or invalid input becomes UNKNOWN.
+const adapterLoader = (project) => async (path, projectId, { now = new Date(), maxAgeMs, freshnessMs } = {}) => {
   const options = { projectId, now: generatedAt(now), freshnessMs: maxAgeMs ?? freshnessMs };
   try {
-    projectJuPlanStatus(undefined, options);
+    project(undefined, options);
   } catch {
-    return { ...projectJuPlanStatus(undefined, { projectId, now: options.now }), reason: 'invalid-request' };
+    return { ...project(undefined, { projectId, now: options.now }), reason: 'invalid-request' };
   }
   try {
-    return projectJuPlanStatus(JSON.parse(await readFile(path, 'utf8')), options);
+    return project(JSON.parse(await readFile(path, 'utf8')), options);
   } catch {
-    return { ...projectJuPlanStatus(undefined, options), reason: 'unavailable' };
+    return { ...project(undefined, options), reason: 'unavailable' };
   }
-}
+};
+
+const loaders = {
+  'juplan-status': adapterLoader(projectJuPlanStatus),
+  'juceipt-receipt': adapterLoader(projectJuCeiptReceipt),
+};
 
 export async function loadProjectStatusBoard(registryPath, { projectId: selected, ...options } = {}) {
   let projects = await loadProjectRegistryEntries(registryPath);
@@ -109,7 +116,7 @@ export async function loadProjectStatusBoard(registryPath, { projectId: selected
   }
   return Promise.all(projects.map(({ projectId, dataRoot, sourceRef, freshnessMs, sourceKind }) => {
     const entryOptions = freshnessMs === undefined ? { ...options, sourceRef } : { ...options, sourceRef, maxAgeMs: freshnessMs };
-    const load = sourceKind === 'juplan-status' ? loadJuPlanStatus : loadProjectStatus;
+    const load = loaders[sourceKind] ?? loadProjectStatus;
     return load(join(dataRoot, 'current.json'), projectId, entryOptions);
   }));
 }

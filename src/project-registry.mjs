@@ -3,7 +3,7 @@ import { isAbsolute } from 'node:path';
 
 const requiredFields = ['projectId', 'workspaceRoot', 'dataRoot', 'sourceRef'];
 const entryFields = new Set([...requiredFields, 'freshnessMs', 'sourceKind']);
-const sourceKinds = new Set(['repository-status-file', 'juplan-status']);
+const sourceKinds = new Set(['repository-status-file', 'juplan-status', 'juceipt-receipt']);
 
 const invalid = (message) => {
   throw new TypeError(`Invalid project registry: ${message}`);

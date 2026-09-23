@@ -77,6 +77,29 @@ test('prints a saved JuPlan status source in registry order without writing', as
   assert.deepEqual(await readdir(directory, { recursive: true }), before);
 });
 
+test('prints a saved JuCeipt receipt source in registry order without writing', async () => {
+  const { directory, path } = await fixture([]);
+  const receiptRoot = join(directory, 'receipt');
+  await mkdir(receiptRoot);
+  const generatedAt = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  await writeFile(join(receiptRoot, 'current.json'), JSON.stringify({
+    receipt_id: 'rcpt-1', acceptance: { state: 'ACCEPTED' }, generated_at: generatedAt,
+  }));
+  await writeFile(path, JSON.stringify({ projects: [
+    { ...entry('missing', join(directory, 'none')), sourceKind: 'juceipt-receipt' },
+    { ...entry('receipt', receiptRoot), sourceKind: 'juceipt-receipt' },
+  ] }));
+  const before = await readdir(directory, { recursive: true });
+
+  const { code, stdout, stderr } = await run(path);
+  assert.equal(code, 0, stderr);
+  assert.deepEqual(JSON.parse(stdout).map((row) => [row.projectId, row.status, row.stale, row.reason, row.sourceRevision, row.source]), [
+    ['missing', 'UNKNOWN', true, 'unavailable', undefined, { kind: 'juceipt-receipt', id: 'juceipt/missing' }],
+    ['receipt', 'ACCEPTED', false, undefined, 'rcpt-1', { kind: 'juceipt-receipt', id: 'juceipt/receipt' }],
+  ]);
+  assert.deepEqual(await readdir(directory, { recursive: true }), before);
+});
+
 test('--project-id prints only the selected project', async () => {
   const { directory, path } = await fixture([]);
   await writeFile(path, JSON.stringify({ projects: [entry('a', join(directory, 'a')), entry('b', join(directory, 'b'))] }));

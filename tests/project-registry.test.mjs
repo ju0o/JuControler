@@ -277,3 +277,46 @@ test('rejects unknown registry sourceKind fail-closed', async () => {
   await assert.rejects(() => loadProjectRegistry(path, 'jucontroler'), /sourceKind must be one of/);
   await assert.rejects(() => loadProjectStatusBoard(path), /sourceKind must be one of/);
 });
+
+test('board projects a juceipt-receipt entry via the JuCeipt adapter in registry order, read-only', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'jucontroler-board-'));
+  const registryPath = join(directory, 'registry.json');
+  const receipt = { receipt_id: 'rcpt-7', acceptance: { state: 'ACCEPTED' }, generated_at: '2026-09-23T00:00:00Z' };
+  for (const name of ['receipt', 'partial', 'bad']) await mkdir(join(directory, name));
+  await writeFile(join(directory, 'receipt', 'current.json'), JSON.stringify(receipt));
+  await writeFile(join(directory, 'partial', 'current.json'), JSON.stringify({ receipt_id: 'rcpt-8' }));
+  await writeFile(join(directory, 'bad', 'current.json'), '{"receipt_id":');
+  await writeFile(registryPath, JSON.stringify(registry([
+    { ...entry('receipt'), dataRoot: join(directory, 'receipt'), sourceKind: 'juceipt-receipt' },
+    { ...entry('partial'), dataRoot: join(directory, 'partial'), sourceKind: 'juceipt-receipt' },
+    { ...entry('bad'), dataRoot: join(directory, 'bad'), sourceKind: 'juceipt-receipt' },
+    { ...entry('gone'), dataRoot: join(directory, 'gone'), sourceKind: 'juceipt-receipt' },
+  ])));
+  const before = await readdir(directory, { recursive: true });
+
+  const board = await loadProjectStatusBoard(registryPath, { now: '2026-09-23T00:01:00Z' });
+  assert.deepEqual(board[0], {
+    schema: 'project-status.v1',
+    projectId: 'receipt',
+    status: 'ACCEPTED',
+    observedAt: '2026-09-23T00:00:00Z',
+    generatedAt: '2026-09-23T00:01:00.000Z',
+    stale: false,
+    source: { kind: 'juceipt-receipt', id: 'juceipt/receipt' },
+    sourceRevision: 'rcpt-7',
+  });
+  assert.deepEqual(board.map((row) => [row.projectId, row.status, row.stale, row.reason, row.source.kind]), [
+    ['receipt', 'ACCEPTED', false, undefined, 'juceipt-receipt'],
+    ['partial', 'UNKNOWN', true, 'missing-acceptance', 'juceipt-receipt'],
+    ['bad', 'UNKNOWN', true, 'unavailable', 'juceipt-receipt'],
+    ['gone', 'UNKNOWN', true, 'unavailable', 'juceipt-receipt'],
+  ]);
+  assert.deepEqual(await readdir(directory, { recursive: true }), before);
+
+  const select = (extra) => loadProjectStatusBoard(registryPath, { projectId: 'receipt', now: '2026-09-23T00:01:00Z', ...extra });
+  const [invalid] = await select({ freshnessMs: -1 });
+  assert.equal(invalid.status, 'UNKNOWN');
+  assert.equal(invalid.reason, 'invalid-request');
+  assert.equal((await select({ freshnessMs: 1000 }))[0].reason, 'stale');
+  assert.equal((await select({ now: '2026-09-22T23:59:00Z' }))[0].reason, 'future-generated-at');
+});
