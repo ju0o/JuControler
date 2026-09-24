@@ -26,11 +26,12 @@ try {
     ? `프로젝트 ${board.length}개 중 ${unknown.length}개는 상태를 알 수 없어요: ${unknown.join(', ')} — README 처음 쓰는 법의 reason 표를 보세요\n`
     : `프로젝트 ${board.length}개 모두 상태를 읽었어요\n`);
 } catch (error) {
-  process.stderr.write(`${korean(error.message)}\n${error.message}\n`);
+  process.stderr.write(`${korean(error)}\n${error.message}\n`);
   process.exit(1);
 }
 
-function korean(message) {
+function korean({ message, cause }) {
+  if (cause instanceof SyntaxError) return '프로젝트 목록 파일이 올바른 JSON이 아니에요 — 쉼표·따옴표·괄호를 확인하세요';
   if (message.startsWith('Unable to read project registry')) return '프로젝트 목록 파일을 열 수 없어요 — 경로를 확인하세요';
   if (message.startsWith('Unknown projectId')) return '그런 프로젝트 ID가 목록에 없어요 — --project-id 값을 확인하세요';
   if (message.startsWith('Invalid project registry')) return '프로젝트 목록 파일 내용이 올바르지 않아요 — 아래 내용을 보고 파일을 고치세요';

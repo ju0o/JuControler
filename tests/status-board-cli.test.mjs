@@ -167,6 +167,15 @@ test('fails nonzero with no stdout for unavailable or invalid registries', async
     assert.match(stderr, /Unable to read project registry/);
     assert.match(stderr.split('\n')[0], /프로젝트 목록 파일을 열 수 없어요 — 경로를 확인하세요/);
   });
+  await t.test('broken JSON registry', async () => {
+    const { path } = await fixture([]);
+    await writeFile(path, '{"projects": [,]');
+    const { code, stdout, stderr } = await run(path);
+    assert.equal(code, 1);
+    assert.equal(stdout, '');
+    assert.equal(stderr.split('\n')[0], '프로젝트 목록 파일이 올바른 JSON이 아니에요 — 쉼표·따옴표·괄호를 확인하세요');
+    assert.match(stderr.split('\n')[1], /^Unable to read project registry: /);
+  });
   await t.test('invalid entry', async () => {
     const { path } = await fixture([entry('bad', 'relative/data')]);
     const { code, stdout, stderr } = await run(path);
