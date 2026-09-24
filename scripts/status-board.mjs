@@ -20,7 +20,9 @@ try {
   const board = await loadProjectStatusBoard(registryPath, { projectId });
   process.stdout.write(`${JSON.stringify(board, null, 2)}\n`);
   const unknown = board.filter((row) => row.status === 'UNKNOWN' || row.stale).map((row) => `${row.projectId}(${row.reason ?? 'stale'})`);
-  process.stderr.write(unknown.length
+  process.stderr.write(!board.length
+    ? '목록에 프로젝트가 없어요 — registry.json의 projects에 항목을 넣으세요 (README 처음 쓰는 법 예시 참고)\n'
+    : unknown.length
     ? `프로젝트 ${board.length}개 중 ${unknown.length}개는 상태를 알 수 없어요: ${unknown.join(', ')} — README 처음 쓰는 법의 reason 표를 보세요\n`
     : `프로젝트 ${board.length}개 모두 상태를 읽었어요\n`);
 } catch (error) {

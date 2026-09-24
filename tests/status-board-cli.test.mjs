@@ -64,6 +64,14 @@ test('prints the canonical board projection without writing', async () => {
   assert.equal(allRead.stderr, '프로젝트 1개 모두 상태를 읽었어요\n');
 });
 
+test('empty registry prints [] and tells the user to add projects', async () => {
+  const { path } = await fixture([]);
+  const { code, stdout, stderr } = await run(path);
+  assert.equal(code, 0, stderr);
+  assert.equal(stdout, '[]\n');
+  assert.equal(stderr, '목록에 프로젝트가 없어요 — registry.json의 projects에 항목을 넣으세요 (README 처음 쓰는 법 예시 참고)\n');
+});
+
 test('prints a saved JuPlan status source in registry order without writing', async () => {
   const { directory, path } = await fixture([]);
   const planRoot = join(directory, 'plan');
