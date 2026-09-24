@@ -1,0 +1,40 @@
+{
+  "schema": "ai-assignment.v1",
+  "assignments": [
+    {
+      "role": "pm",
+      "choices": [
+        { "runtime": "claude-code", "tier": "subscribed" },
+        { "runtime": "codex", "tier": "subscribed" },
+        { "runtime": "opencode", "tier": "free" }
+      ],
+      "permissions": { "dispatch": false, "install": false, "createAccount": false }
+    },
+    {
+      "role": "worker",
+      "choices": [
+        { "runtime": "codex", "tier": "subscribed" },
+        { "runtime": "claude-code", "tier": "subscribed" },
+        { "runtime": "opencode", "tier": "free" }
+      ],
+      "permissions": { "dispatch": false, "install": false, "createAccount": false }
+    },
+    {
+      "role": "qa",
+      "choices": [
+        { "runtime": "claude-code", "tier": "subscribed" },
+        { "runtime": "codex", "tier": "subscribed" },
+        { "runtime": "opencode", "tier": "free" }
+      ],
+      "permissions": { "dispatch": false, "install": false, "createAccount": false }
+    },
+    {
+      "role": "tester",
+      "choices": [
+        { "runtime": "codex", "tier": "subscribed" },
+        { "runtime": "opencode", "tier": "free" }
+      ],
+      "permissions": { "dispatch": false, "install": false, "createAccount": false }
+    }
+  ]
+}

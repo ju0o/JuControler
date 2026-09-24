@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ju0o.github.io/JuControler/schemas/ai-assignment.v1.json",
+  "title": "JuControler role x runtime AI auto-assignment",
+  "description": "Read-only record of the ordered runtime choices for each harness role. Subscribed runtimes come first; free models from already-installed tools follow as the backup used when a limit or failure is hit or the work is light. An assignment names an order; it does not dispatch work, install tools, or create accounts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "assignments"],
+  "properties": {
+    "schema": {
+      "const": "ai-assignment.v1",
+      "description": "Assignment contract identifier."
+    },
+    "assignments": {
+      "type": "array",
+      "minItems": 1,
+      "description": "One entry per role; every role pm, worker, qa, and tester appears exactly once.",
+      "items": { "$ref": "#/$defs/assignment" }
+    }
+  },
+  "$defs": {
+    "assignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "choices", "permissions"],
+      "properties": {
+        "role": {
+          "enum": ["pm", "worker", "qa", "tester"],
+          "description": "Harness role the runtimes are ordered for. Role is not Runtime."
+        },
+        "choices": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Runtime choices in try order. Every subscribed entry comes before every free entry.",
+          "items": { "$ref": "#/$defs/choice" }
+        },
+        "permissions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["dispatch", "install", "createAccount"],
+          "description": "Explicit read-only permissions. Every field is fixed; there is no writable variant.",
+          "properties": {
+            "dispatch": {
+              "const": false,
+              "description": "Must not dispatch, send to, or control agents, runtimes, or managed work."
+            },
+            "install": {
+              "const": false,
+              "description": "Must not install a tool or model; free choices only name tools already installed."
+            },
+            "createAccount": {
+              "const": false,
+              "description": "Must not sign up for, subscribe to, or create any provider account."
+            }
+          }
+        }
+      }
+    },
+    "choice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runtime", "tier"],
+      "properties": {
+        "runtime": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Agent runtime identifier, e.g. claude-code, codex, opencode."
+        },
+        "tier": {
+          "enum": ["subscribed", "free"],
+          "description": "subscribed: a runtime the Founder already pays for, tried first. free: a free model from an already-installed tool, the backup on a limit, a failure, or light work."
+        }
+      }
+    }
+  }
+}
