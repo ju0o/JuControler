@@ -98,6 +98,33 @@ node scripts/status-board.mjs <registry.json> [--project-id <id>]
 - `current.json`은 각 항목의 `dataRoot` 폴더 바로 안(`<dataRoot>/current.json`)에 둡니다.
 - `UNKNOWN`은 그 파일이 없거나 읽을 수 없어서 상태를 알 수 없다는 뜻입니다.
 
+상태판에 `reason`이 보이면 아래 표로 뜻과 다음 할 일을 확인하세요.
+
+| `reason` | 뜻 | 다음 할 일 |
+| --- | --- | --- |
+| `unavailable` | `current.json`이 없거나 JSON으로 읽을 수 없어요. | `<dataRoot>/current.json`이 있는지, 올바른 JSON인지 확인하세요. |
+| `invalid-request` | 요청 값(`projectId`나 `freshnessMs`)이 잘못됐어요. | `registry.json`의 `projectId`와 `freshnessMs`(0 이상 숫자)를 고치세요. |
+| `malformed` | 저장된 값이 JSON 객체가 아니에요. | 파일 내용이 `{ ... }` 모양인지 확인하세요. |
+| `project-mismatch` | 파일 속 `projectId`가 목록의 `projectId`와 달라요. | 두 값을 같게 맞추세요. |
+| `invalid-stale` | 파일 속 `stale`이 `true`/`false`가 아니에요. | `stale`을 `true`나 `false`로 고치거나 지우세요. |
+| `missing-status` | 파일에 `status`가 없거나 비어 있어요. | 원본에서 `status`를 채워 다시 저장하세요. |
+| `missing-lane` | 보드 스냅샷에 그 id의 레인이 없어요. | `projectId`가 레인 id와 같은지 확인하세요. |
+| `missing-state` | 레인의 `state`가 없거나 비어 있어요. | Agent Relay 보드 스냅샷을 새로 저장하세요. |
+| `invalid-holds` | 레인의 `holds`가 목록(배열)이 아니에요. | 보드 스냅샷을 새로 저장하세요. |
+| `human-gate` | 사람 확인을 기다리는 레인이에요. 상태는 그대로예요. | 해당 레인의 확인 요청을 처리하세요. |
+| `hold` | 레인이 보류 중이에요. 상태는 그대로예요. | 보류 이유를 확인하고 풀어 주세요. |
+| `missing-runner` | 보드에 러너 정보가 없어요. | 보드 스냅샷을 새로 저장하세요. |
+| `missing-runner-mode` | 러너의 `day`나 `night` 값이 없어요. | 보드 스냅샷을 새로 저장하세요. |
+| `missing-observedAt` | 관찰 시각이 없거나 형식이 틀렸어요. | `observedAt`을 UTC(`...Z`) 형식으로 넣으세요. |
+| `future-observedAt` | 관찰 시각이 지금보다 뒤예요. | 원본 컴퓨터의 시계를 확인하세요. |
+| `stale` | 관찰한 지 너무 오래됐어요(기본 5분). 지금 상태로 믿으면 안 돼요. | 원본에서 상태를 새로 저장하세요. |
+| `source-stale` | 원본이 스스로 오래된 값이라고 알렸어요. | 원본에서 상태를 새로 저장하세요. |
+| `missing-receipt-id` | JuCeipt 영수증에 `receipt_id`가 없어요. | 영수증을 다시 만드세요. |
+| `missing-acceptance` | 영수증에 `acceptance`가 없어요. | 영수증을 다시 만드세요. |
+| `missing-acceptance-state` | 영수증의 `acceptance.state`가 비어 있어요. | 영수증을 다시 만드세요. |
+| `missing-generated-at` | 영수증의 `generated_at`이 없거나 형식이 틀렸어요. | `generated_at`을 UTC(`...Z`) 형식으로 넣으세요. |
+| `future-generated-at` | 영수증의 `generated_at`이 지금보다 뒤예요. | 영수증을 만든 컴퓨터의 시계를 확인하세요. |
+
 New integration source belongs in `src/`, runtime/install tooling in `scripts/`,
 and tests in `tests/`. [Public documentation](docs/README.md) is reviewed
 separately from internal product planning, which belongs in the independent
