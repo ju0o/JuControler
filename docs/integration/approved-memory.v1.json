@@ -1,0 +1,38 @@
+{
+  "schema": "approved-memory.v1",
+  "delivery": {
+    "roles": ["pm", "worker", "qa"],
+    "status": "active",
+    "approvedBy": "founder",
+    "permissions": { "write": false, "approve": false, "dispatch": false }
+  },
+  "memories": [
+    {
+      "memoryId": "one-task-at-a-time",
+      "scope": "global",
+      "projectId": null,
+      "origin": "founder",
+      "status": "active",
+      "approvedBy": "founder",
+      "text": "작업 범위 원칙: 한 번에 하나의 작업만 진행하고, 근거를 함께 남깁니다."
+    },
+    {
+      "memoryId": "role-is-not-runtime",
+      "scope": "project",
+      "projectId": "jucontroler",
+      "origin": "founder",
+      "status": "active",
+      "approvedBy": "founder",
+      "text": "Role is not Runtime: PM, Worker, QA 하네스는 그것을 실행하는 에이전트 런타임과 분리합니다."
+    },
+    {
+      "memoryId": "qa-rerun-listed-tests",
+      "scope": "project",
+      "projectId": "jucontroler",
+      "origin": "qa-lesson",
+      "status": "proposed",
+      "approvedBy": null,
+      "text": "QA 제안: 결과를 받기 전에 작업에 적힌 테스트를 직접 다시 돌립니다."
+    }
+  ]
+}
