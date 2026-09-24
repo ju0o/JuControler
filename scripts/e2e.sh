@@ -68,11 +68,15 @@ const fs = require('node:fs');
 const [ok, start, summaryPath, ...steps] = process.argv.slice(2);
 const summary = fs.existsSync(summaryPath) ? JSON.parse(fs.readFileSync(summaryPath, 'utf8')) : {};
 const labels = { build_registry: '연습용 목록 만들기', run_status_board: '상태판 실행', check_projections: '상태 확인', run_project_id: '프로젝트 하나 조회' };
+const tests = 'node --test tests/*.test.mjs';
+const board = 'node scripts/status-board.mjs <registry.json>';
+const commands = { build_registry: tests, run_status_board: board, check_projections: tests, run_project_id: board };
 const failed = steps.find((step) => step.endsWith(':false'))?.split(':')[0];
 console.log(JSON.stringify({
   schema: 'jucontroler.e2e.v1',
   ok: ok === 'true',
-  message: failed ? labels[failed] + ' 단계에서 멈췄어요 — 아래 명령을 직접 실행해 보세요' : '모두 정상이에요',
+  message: failed ? labels[failed] + ' 단계에서 멈췄어요 — next의 명령을 직접 실행해 보세요' : '모두 정상이에요',
+  ...(failed && { next: commands[failed] }),
   steps: steps.map((step) => ({ name: step.split(':')[0].replaceAll('_', '-'), ok: step.endsWith(':true') })),
   ms: Math.round(Date.now() - Number(start) * 1000),
   ...summary,

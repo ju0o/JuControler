@@ -59,8 +59,11 @@ node scripts/status-board.mjs <registry.json> [--project-id <id>]
 
 - `ok` — 모든 단계가 통과하면 `true`입니다. 이때만 종료 코드가 `0`입니다.
 - `message` — 결과를 쉬운 한국어 한 문장으로 알려 줍니다. 정상이면 `모두 정상이에요`,
-  실패하면 처음 멈춘 단계를 알려 줍니다(예: `상태판 실행 단계에서 멈췄어요 — 아래
-  명령을 직접 실행해 보세요`). 이때 위 `처음 쓰는 법`의 명령을 차례로 직접 실행해 보세요.
+  실패하면 처음 멈춘 단계를 알려 줍니다(예: `상태판 실행 단계에서 멈췄어요 — next의
+  명령을 직접 실행해 보세요`).
+- `next` — 실패했을 때만 나옵니다. 멈춘 단계에 맞는 위 `처음 쓰는 법`의 명령
+  하나입니다. `build-registry`·`check-projections`는 `node --test tests/*.test.mjs`,
+  `run-status-board`·`run-project-id`는 `node scripts/status-board.mjs <registry.json>`입니다.
 - `steps` — 단계별 결과입니다. 하나가 실패하면 그 뒤 단계는 실행하지 않고
   `ok: false`로 적습니다.
   - `build-registry`: 연습용 프로젝트 목록 만들기
