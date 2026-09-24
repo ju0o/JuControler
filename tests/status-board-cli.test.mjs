@@ -203,6 +203,7 @@ test('offline e2e script prints exactly one passing JSON result line and cleans 
   const result = JSON.parse(lines[0]);
   assert.equal(result.schema, 'jucontroler.e2e.v1');
   assert.equal(result.ok, true);
+  assert.equal(result.message, '모두 정상이에요');
   assert.equal(result.projects, 6);
   assert.equal(result.statuses['agent-relay'], 'day=IDLE;night=RUNNING');
   assert.deepEqual(await readdir(parent), []);

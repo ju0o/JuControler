@@ -52,12 +52,15 @@ node scripts/status-board.mjs <registry.json> [--project-id <id>]
 `bash scripts/e2e.sh`는 JSON 한 줄만 출력합니다. 예시:
 
 ```json
-{"schema":"jucontroler.e2e.v1","ok":true,"steps":[{"name":"build-registry","ok":true},{"name":"run-status-board","ok":true},{"name":"check-projections","ok":true},{"name":"run-project-id","ok":true}],"ms":1744,"projects":6,"statuses":{"repo":"READY","plan":"PLANNING","receipt":"ACCEPTED","agent-relay":"day=IDLE;night=RUNNING","lane":"RUNNING","missing":"UNKNOWN"}}
+{"schema":"jucontroler.e2e.v1","ok":true,"message":"모두 정상이에요","steps":[{"name":"build-registry","ok":true},{"name":"run-status-board","ok":true},{"name":"check-projections","ok":true},{"name":"run-project-id","ok":true}],"ms":1744,"projects":6,"statuses":{"repo":"READY","plan":"PLANNING","receipt":"ACCEPTED","agent-relay":"day=IDLE;night=RUNNING","lane":"RUNNING","missing":"UNKNOWN"}}
 ```
 
 읽는 법:
 
 - `ok` — 모든 단계가 통과하면 `true`입니다. 이때만 종료 코드가 `0`입니다.
+- `message` — 결과를 쉬운 한국어 한 문장으로 알려 줍니다. 정상이면 `모두 정상이에요`,
+  실패하면 처음 멈춘 단계를 알려 줍니다(예: `상태판 실행 단계에서 멈췄어요 — 아래
+  명령을 직접 실행해 보세요`). 이때 위 `처음 쓰는 법`의 명령을 차례로 직접 실행해 보세요.
 - `steps` — 단계별 결과입니다. 하나가 실패하면 그 뒤 단계는 실행하지 않고
   `ok: false`로 적습니다.
   - `build-registry`: 연습용 프로젝트 목록 만들기
