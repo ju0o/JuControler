@@ -76,6 +76,28 @@ node scripts/status-board.mjs <registry.json> [--project-id <id>]
 스냅샷을 읽고, `projectId`가 `agent-relay`이면 러너를, 그 밖이면 같은 id의
 레인을 보여 줍니다. 없는 레인은 `UNKNOWN`(이유 `missing-lane`)으로 나옵니다.
 
+내 `registry.json`은 아래를 복사해서 값만 바꾸면 됩니다.
+
+```json
+{
+  "projects": [
+    {
+      "projectId": "my-project",
+      "workspaceRoot": "/home/me/my-project",
+      "dataRoot": "/home/me/.local/share/my-project",
+      "sourceRef": "my-project/status",
+      "sourceKind": "repository-status-file"
+    }
+  ]
+}
+```
+
+- `workspaceRoot`, `dataRoot`는 `/`로 시작하는 절대 경로여야 합니다.
+- 위에 없는 칸(`freshnessMs` 제외)을 넣으면 오류가 납니다.
+- `sourceKind`는 빼도 되고(그러면 `repository-status-file`), 넣으려면 위 네 종류 중 하나만 씁니다.
+- `current.json`은 각 항목의 `dataRoot` 폴더 바로 안(`<dataRoot>/current.json`)에 둡니다.
+- `UNKNOWN`은 그 파일이 없거나 읽을 수 없어서 상태를 알 수 없다는 뜻입니다.
+
 New integration source belongs in `src/`, runtime/install tooling in `scripts/`,
 and tests in `tests/`. [Public documentation](docs/README.md) is reviewed
 separately from internal product planning, which belongs in the independent
