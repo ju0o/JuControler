@@ -17,7 +17,12 @@ try {
 }
 
 try {
-  process.stdout.write(`${JSON.stringify(await loadProjectStatusBoard(registryPath, { projectId }), null, 2)}\n`);
+  const board = await loadProjectStatusBoard(registryPath, { projectId });
+  process.stdout.write(`${JSON.stringify(board, null, 2)}\n`);
+  const unknown = board.filter((row) => row.status === 'UNKNOWN' || row.stale).map((row) => row.projectId);
+  process.stderr.write(unknown.length
+    ? `프로젝트 ${board.length}개 중 ${unknown.length}개는 상태를 알 수 없어요: ${unknown.join(', ')}\n`
+    : `프로젝트 ${board.length}개 모두 상태를 읽었어요\n`);
 } catch (error) {
   process.stderr.write(`${korean(error.message)}\n${error.message}\n`);
   process.exit(1);

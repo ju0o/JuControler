@@ -52,8 +52,16 @@ test('prints the canonical board projection without writing', async () => {
   ]);
   assert.equal(board[0].observedAt, observedAt);
   assert.equal(board[1].reason, 'unavailable');
+  assert.equal(stdout, `${JSON.stringify(board, null, 2)}\n`);
+  assert.equal(stderr, '프로젝트 2개 중 1개는 상태를 알 수 없어요: missing\n');
   assert.deepEqual(await readdir(directory, { recursive: true }), before);
   assert.equal(await readFile(path, 'utf8'), registryBefore);
+
+  await writeFile(path, JSON.stringify({ projects: [entry('ready', readyRoot)] }));
+  const allRead = await run(path);
+  assert.equal(allRead.code, 0, allRead.stderr);
+  assert.equal(allRead.stdout, `${JSON.stringify(JSON.parse(allRead.stdout), null, 2)}\n`);
+  assert.equal(allRead.stderr, '프로젝트 1개 모두 상태를 읽었어요\n');
 });
 
 test('prints a saved JuPlan status source in registry order without writing', async () => {
