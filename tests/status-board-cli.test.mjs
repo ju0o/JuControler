@@ -53,7 +53,7 @@ test('prints the canonical board projection without writing', async () => {
   assert.equal(board[0].observedAt, observedAt);
   assert.equal(board[1].reason, 'unavailable');
   assert.equal(stdout, `${JSON.stringify(board, null, 2)}\n`);
-  assert.equal(stderr, '프로젝트 2개 중 1개는 상태를 알 수 없어요: missing\n');
+  assert.equal(stderr, '프로젝트 2개 중 1개는 상태를 알 수 없어요: missing(unavailable) — README 처음 쓰는 법의 reason 표를 보세요\n');
   assert.deepEqual(await readdir(directory, { recursive: true }), before);
   assert.equal(await readFile(path, 'utf8'), registryBefore);
 
