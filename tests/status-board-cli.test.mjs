@@ -118,6 +118,7 @@ test('fails nonzero with no stdout for unavailable or invalid registries', async
     assert.equal(code, 1);
     assert.equal(stdout, '');
     assert.match(stderr, /Unknown projectId: nope/);
+    assert.match(stderr.split('\n')[0], /그런 프로젝트 ID가 목록에 없어요 — --project-id 값을 확인하세요/);
   });
   await t.test('--project-id still rejects duplicate registries', async () => {
     const { path } = await fixture([entry('a', '/data/a'), entry('dup', '/data/dup'), entry('dup', '/data/dup')]);
@@ -125,26 +126,30 @@ test('fails nonzero with no stdout for unavailable or invalid registries', async
     assert.equal(code, 1);
     assert.equal(stdout, '');
     assert.match(stderr, /is duplicated/);
+    assert.match(stderr.split('\n')[0], /프로젝트 목록 파일 내용이 올바르지 않아요/);
   });
   for (const args of [['--project-id'], ['--project-id', ''], ['--bogus'], ['x.json', 'y.json']]) {
     await t.test(`bad arguments ${JSON.stringify(args)}`, async () => {
       const { path } = await fixture([]);
-      const { code, stdout } = await run(...(args[0] === 'x.json' ? args : [path, ...args]));
+      const { code, stdout, stderr } = await run(...(args[0] === 'x.json' ? args : [path, ...args]));
       assert.equal(code, 2);
       assert.equal(stdout, '');
+      assert.match(stderr.split('\n')[0], /^사용법: /);
     });
   }
 
   await t.test('missing argument', async () => {
-    const { code, stdout } = await run();
+    const { code, stdout, stderr } = await run();
     assert.notEqual(code, 0);
     assert.equal(stdout, '');
+    assert.match(stderr.split('\n')[0], /^사용법: /);
   });
   await t.test('missing registry file', async () => {
     const { code, stdout, stderr } = await run(join(tmpdir(), 'jucontroler-no-such-registry.json'));
     assert.equal(code, 1);
     assert.equal(stdout, '');
     assert.match(stderr, /Unable to read project registry/);
+    assert.match(stderr.split('\n')[0], /프로젝트 목록 파일을 열 수 없어요 — 경로를 확인하세요/);
   });
   await t.test('invalid entry', async () => {
     const { path } = await fixture([entry('bad', 'relative/data')]);
@@ -152,6 +157,7 @@ test('fails nonzero with no stdout for unavailable or invalid registries', async
     assert.equal(code, 1);
     assert.equal(stdout, '');
     assert.match(stderr, /dataRoot must be absolute/);
+    assert.match(stderr.split('\n')[0], /프로젝트 목록 파일 내용이 올바르지 않아요/);
   });
   await t.test('duplicate project IDs', async () => {
     const { path } = await fixture([entry('dup', '/data/dup'), entry('dup', '/data/dup')]);
@@ -159,6 +165,7 @@ test('fails nonzero with no stdout for unavailable or invalid registries', async
     assert.equal(code, 1);
     assert.equal(stdout, '');
     assert.match(stderr, /is duplicated/);
+    assert.match(stderr.split('\n')[0], /프로젝트 목록 파일 내용이 올바르지 않아요/);
   });
 });
 

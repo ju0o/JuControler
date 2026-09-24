@@ -11,6 +11,7 @@ try {
   [registryPath] = positionals;
   projectId = values['project-id'];
 } catch {
+  process.stderr.write('사용법: node scripts/status-board.mjs <프로젝트 목록 파일.json> [--project-id <프로젝트 ID>]\n');
   process.stderr.write('Usage: status-board.mjs <registry.json> [--project-id <id>]\n');
   process.exit(2);
 }
@@ -18,6 +19,13 @@ try {
 try {
   process.stdout.write(`${JSON.stringify(await loadProjectStatusBoard(registryPath, { projectId }), null, 2)}\n`);
 } catch (error) {
-  process.stderr.write(`${error.message}\n`);
+  process.stderr.write(`${korean(error.message)}\n${error.message}\n`);
   process.exit(1);
+}
+
+function korean(message) {
+  if (message.startsWith('Unable to read project registry')) return '프로젝트 목록 파일을 열 수 없어요 — 경로를 확인하세요';
+  if (message.startsWith('Unknown projectId')) return '그런 프로젝트 ID가 목록에 없어요 — --project-id 값을 확인하세요';
+  if (message.startsWith('Invalid project registry')) return '프로젝트 목록 파일 내용이 올바르지 않아요 — 아래 내용을 보고 파일을 고치세요';
+  return '상태판을 불러오지 못했어요 — 아래 내용을 확인하세요';
 }
