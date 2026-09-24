@@ -105,6 +105,7 @@ node scripts/status-board.mjs <registry.json> [--project-id <id>]
 | `unavailable` | `current.json`이 없거나 JSON으로 읽을 수 없어요. | `<dataRoot>/current.json`이 있는지, 올바른 JSON인지 확인하세요. |
 | `invalid-request` | 요청 값(`projectId`나 `freshnessMs`)이 잘못됐어요. | `registry.json`의 `projectId`와 `freshnessMs`(0 이상 숫자)를 고치세요. |
 | `malformed` | 저장된 값이 JSON 객체가 아니에요. | 파일 내용이 `{ ... }` 모양인지 확인하세요. |
+| `invalid` | `current.json`이 `project-status.v1` 모양이 아니거나 보드 스냅샷 구조가 깨졌어요. | 빠진 칸, 틀린 `projectId`, 미래 시각이 없는지 확인하고 원본에서 다시 저장하세요. |
 | `project-mismatch` | 파일 속 `projectId`가 목록의 `projectId`와 달라요. | 두 값을 같게 맞추세요. |
 | `invalid-stale` | 파일 속 `stale`이 `true`/`false`가 아니에요. | `stale`을 `true`나 `false`로 고치거나 지우세요. |
 | `missing-status` | 파일에 `status`가 없거나 비어 있어요. | 원본에서 `status`를 채워 다시 저장하세요. |
