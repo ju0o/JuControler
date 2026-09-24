@@ -1,45 +1,78 @@
 #!/usr/bin/env bash
 # Offline, read-only E2E: builds a temp registry with one saved source per sourceKind,
 # runs the status-board CLI against it, and prints exactly one JSON result line.
-set -euo pipefail
+set -uo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-tmp="$(mktemp -d "${TMPDIR:-/tmp}/jucontroler-e2e-XXXXXX")"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/jucontroler-e2e-XXXXXX")" || exit 1
 trap 'rm -rf "$tmp"' EXIT
+start="${EPOCHREALTIME/,/.}" # bash 5 seconds.micros; some locales use a comma
 
-now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-mkdir -p "$tmp/repo" "$tmp/plan" "$tmp/receipt" "$tmp/relay"
-cat >"$tmp/repo/current.json" <<EOF
+build_registry() {
+  local now
+  now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  mkdir -p "$tmp/repo" "$tmp/plan" "$tmp/receipt" "$tmp/relay" || return 1
+  cat >"$tmp/repo/current.json" <<EOF
 {"schema":"project-status.v1","projectId":"repo","status":"READY","observedAt":"$now","source":{"kind":"repository-status-file","id":"repo/status"}}
 EOF
-cat >"$tmp/plan/current.json" <<EOF
+  cat >"$tmp/plan/current.json" <<EOF
 {"projectId":"plan","status":"PLANNING","observedAt":"$now"}
 EOF
-cat >"$tmp/receipt/current.json" <<EOF
+  cat >"$tmp/receipt/current.json" <<EOF
 {"receipt_id":"rcpt-e2e","acceptance":{"state":"ACCEPTED"},"generated_at":"$now"}
 EOF
-cat >"$tmp/relay/current.json" <<EOF
+  cat >"$tmp/relay/current.json" <<EOF
 {"kind":"BOARD","observedAt":"$now","runner":{"day":"IDLE","night":"RUNNING"},"lanes":[{"id":"lane","state":"RUNNING","holds":[],"humanGate":null}]}
 EOF
-entry() { printf '{"projectId":"%s","workspaceRoot":"/work/%s","dataRoot":"%s","sourceRef":"e2e/%s","sourceKind":"%s"}' "$1" "$1" "$tmp/$2" "$1" "$3"; }
-printf '{"projects":[%s,%s,%s,%s,%s,%s]}\n' \
-  "$(entry repo repo repository-status-file)" \
-  "$(entry plan plan juplan-status)" \
-  "$(entry receipt receipt juceipt-receipt)" \
-  "$(entry agent-relay relay agent-relay-board)" \
-  "$(entry lane relay agent-relay-board)" \
-  "$(entry missing none juplan-status)" >"$tmp/registry.json"
+  entry() { printf '{"projectId":"%s","workspaceRoot":"/work/%s","dataRoot":"%s","sourceRef":"e2e/%s","sourceKind":"%s"}' "$1" "$1" "$tmp/$2" "$1" "$3"; }
+  printf '{"projects":[%s,%s,%s,%s,%s,%s]}\n' \
+    "$(entry repo repo repository-status-file)" \
+    "$(entry plan plan juplan-status)" \
+    "$(entry receipt receipt juceipt-receipt)" \
+    "$(entry agent-relay relay agent-relay-board)" \
+    "$(entry lane relay agent-relay-board)" \
+    "$(entry missing none juplan-status)" >"$tmp/registry.json"
+}
 
-node "$root/scripts/status-board.mjs" "$tmp/registry.json" >"$tmp/board.json"
+run_status_board() { node "$root/scripts/status-board.mjs" "$tmp/registry.json" >"$tmp/board.json"; }
 
-node - "$tmp/board.json" <<'EOF'
-const board = JSON.parse(require('node:fs').readFileSync(process.argv[2], 'utf8'));
+check_projections() {
+  node - "$tmp/board.json" "$tmp/summary.json" <<'EOF'
+const fs = require('node:fs');
+const board = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const expected = [
   ['repo', 'READY', false], ['plan', 'PLANNING', false], ['receipt', 'ACCEPTED', false],
   ['agent-relay', 'day=IDLE;night=RUNNING', false], ['lane', 'RUNNING', false], ['missing', 'UNKNOWN', true],
 ];
 const actual = board.map(({ projectId, status, stale }) => [projectId, status, stale]);
-const ok = JSON.stringify(actual) === JSON.stringify(expected);
-console.log(JSON.stringify({ schema: 'jucontroler.e2e.v1', ok, projects: board.length, statuses: Object.fromEntries(actual.map(([id, status]) => [id, status])) }));
-process.exit(ok ? 0 : 1);
+fs.writeFileSync(process.argv[3], JSON.stringify({ projects: board.length, statuses: Object.fromEntries(actual.map(([id, status]) => [id, status])) }));
+process.exit(JSON.stringify(actual) === JSON.stringify(expected) ? 0 : 1);
 EOF
+}
+
+run_project_id() {
+  node "$root/scripts/status-board.mjs" "$tmp/registry.json" --project-id lane >"$tmp/lane.json" &&
+    node -e 'const b = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
+process.exit(b.length === 1 && b[0].projectId === "lane" && b[0].status === "RUNNING" ? 0 : 1);' "$tmp/lane.json"
+}
+
+# Steps run in order; after the first failure the rest are recorded as not ok without running.
+steps=()
+ok=true
+for step in build_registry run_status_board check_projections run_project_id; do
+  if [ "$ok" = true ] && "$step" >/dev/null 2>&1; then steps+=("$step:true"); else ok=false; steps+=("$step:false"); fi
+done
+
+node - "$ok" "$start" "$tmp/summary.json" "${steps[@]}" <<'EOF'
+const fs = require('node:fs');
+const [ok, start, summaryPath, ...steps] = process.argv.slice(2);
+const summary = fs.existsSync(summaryPath) ? JSON.parse(fs.readFileSync(summaryPath, 'utf8')) : {};
+console.log(JSON.stringify({
+  schema: 'jucontroler.e2e.v1',
+  ok: ok === 'true',
+  steps: steps.map((step) => ({ name: step.split(':')[0].replaceAll('_', '-'), ok: step.endsWith(':true') })),
+  ms: Math.round(Date.now() - Number(start) * 1000),
+  ...summary,
+}));
+EOF
+[ "$ok" = true ]

@@ -29,10 +29,10 @@ implemented integration runtime or a certified end-to-end loop under the
 current direction. The only runnable surface is the read-only status board
 below.
 
-## Quickstart
+## 처음 쓰는 법
 
-Requires Node.js 22+ and bash; no install step, no network. Run from the
-repository root:
+준비물은 Node.js 22 이상과 bash뿐입니다. 따로 설치할 것도 없고, 인터넷도
+쓰지 않습니다. 저장소 맨 위 폴더에서 아래 명령을 차례로 입력하세요.
 
 ```sh
 bash scripts/e2e.sh
@@ -40,19 +40,36 @@ node --test tests/project-registry.test.mjs tests/status-board-cli.test.mjs
 node scripts/status-board.mjs <registry.json> [--project-id <id>]
 ```
 
-`scripts/e2e.sh` builds a temporary registry with one saved source per
-`sourceKind` (`repository-status-file`, `juplan-status`, `juceipt-receipt`,
-`agent-relay-board`), runs the status board against it, deletes the temporary
-directory, and prints exactly one JSON line, for example:
+1. `bash scripts/e2e.sh` — 전체 흐름을 한 번에 점검합니다. 임시 폴더에 연습용
+   프로젝트 목록(registry)을 만들고, 상태판을 돌려 보고, 결과를 확인한 뒤
+   임시 폴더를 지웁니다. 아무것도 바꾸지 않습니다.
+2. `node --test ...` — 자동 테스트를 돌립니다. 마지막에 `fail 0`이 나오면 정상입니다.
+3. `node scripts/status-board.mjs <registry.json>` — 내 프로젝트 목록 파일로
+   상태판을 봅니다. `--project-id <id>`를 붙이면 그 프로젝트 하나만 보여 줍니다.
+
+`bash scripts/e2e.sh`는 JSON 한 줄만 출력합니다. 예시:
 
 ```json
-{"schema":"jucontroler.e2e.v1","ok":true,"projects":6,"statuses":{"repo":"READY","plan":"PLANNING","receipt":"ACCEPTED","agent-relay":"day=IDLE;night=RUNNING","lane":"RUNNING","missing":"UNKNOWN"}}
+{"schema":"jucontroler.e2e.v1","ok":true,"steps":[{"name":"build-registry","ok":true},{"name":"run-status-board","ok":true},{"name":"check-projections","ok":true},{"name":"run-project-id","ok":true}],"ms":1744,"projects":6,"statuses":{"repo":"READY","plan":"PLANNING","receipt":"ACCEPTED","agent-relay":"day=IDLE;night=RUNNING","lane":"RUNNING","missing":"UNKNOWN"}}
 ```
 
-It exits `0` only when `ok` is `true`. For an `agent-relay-board` registry
-entry, `<dataRoot>/current.json` is a saved `night board` snapshot and the
-entry's `projectId` selects the runner (`agent-relay`) or the lane with that
-id; a missing lane is `UNKNOWN` with reason `missing-lane`.
+읽는 법:
+
+- `ok` — 모든 단계가 통과하면 `true`입니다. 이때만 종료 코드가 `0`입니다.
+- `steps` — 단계별 결과입니다. 하나가 실패하면 그 뒤 단계는 실행하지 않고
+  `ok: false`로 적습니다.
+  - `build-registry`: 연습용 프로젝트 목록 만들기
+  - `run-status-board`: 상태판 실행
+  - `check-projections`: 여섯 프로젝트의 상태가 예상과 같은지 확인
+  - `run-project-id`: `--project-id lane`으로 프로젝트 하나만 조회
+- `ms` — 전체 실행 시간(밀리초)입니다. 실행할 때마다 조금씩 다릅니다.
+- `projects`, `statuses` — 상태판에 나온 프로젝트 수와 각 상태입니다.
+
+연습용 목록에는 `sourceKind` 네 종류(`repository-status-file`,
+`juplan-status`, `juceipt-receipt`, `agent-relay-board`)가 하나씩 들어 있습니다.
+`agent-relay-board` 항목은 `<dataRoot>/current.json`에 저장된 `night board`
+스냅샷을 읽고, `projectId`가 `agent-relay`이면 러너를, 그 밖이면 같은 id의
+레인을 보여 줍니다. 없는 레인은 `UNKNOWN`(이유 `missing-lane`)으로 나옵니다.
 
 New integration source belongs in `src/`, runtime/install tooling in `scripts/`,
 and tests in `tests/`. [Public documentation](docs/README.md) is reviewed
