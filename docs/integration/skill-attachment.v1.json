@@ -1,0 +1,23 @@
+{
+  "schema": "skill-attachment.v1",
+  "attachments": [
+    {
+      "projectId": "jucontroler",
+      "role": "pm",
+      "skillIds": ["founder-plan-harness"],
+      "permissions": { "install": false, "dispatch": false, "overwrite": false }
+    },
+    {
+      "projectId": "jucontroler",
+      "role": "worker",
+      "skillIds": ["founder-plan-harness"],
+      "permissions": { "install": false, "dispatch": false, "overwrite": false }
+    },
+    {
+      "projectId": "jucontroler",
+      "role": "qa",
+      "skillIds": ["founder-plan-harness"],
+      "permissions": { "install": false, "dispatch": false, "overwrite": false }
+    }
+  ]
+}

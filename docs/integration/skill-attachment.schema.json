@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ju0o.github.io/JuControler/schemas/skill-attachment.v1.json",
+  "title": "JuControler project x role Skill attachment",
+  "description": "Read-only record of which Skills each project attaches to its PM, Worker, and QA roles. An attachment names a selection; it does not install, dispatch, or overwrite any Skill.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "attachments"],
+  "properties": {
+    "schema": {
+      "const": "skill-attachment.v1",
+      "description": "Attachment contract identifier."
+    },
+    "attachments": {
+      "type": "array",
+      "minItems": 1,
+      "description": "One entry per project and role; the (projectId, role) pair is unique across entries, and every project lists pm, worker, and qa.",
+      "items": { "$ref": "#/$defs/attachment" }
+    }
+  },
+  "$defs": {
+    "attachment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectId", "role", "skillIds", "permissions"],
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Project Registry projectId the selection belongs to."
+        },
+        "role": {
+          "enum": ["pm", "worker", "qa"],
+          "description": "Harness role the Skills are selected for. Role is not Runtime."
+        },
+        "skillIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "description": "Explicitly selected Skill identifiers, in order. An empty list means no Skill is attached; nothing is inferred.",
+          "items": { "type": "string", "pattern": "^[a-z0-9-]+(:[a-z0-9-]+)?$" }
+        },
+        "permissions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["install", "dispatch", "overwrite"],
+          "description": "Explicit read-only permissions. Every field is fixed; there is no writable variant.",
+          "properties": {
+            "install": {
+              "const": false,
+              "description": "Must not install or write Skills into any agent's skill directory or configuration."
+            },
+            "dispatch": {
+              "const": false,
+              "description": "Must not dispatch, send to, or control agents, runtimes, or managed work."
+            },
+            "overwrite": {
+              "const": false,
+              "description": "Must not replace or modify an existing Skill's files or a runtime's current Skill selection."
+            }
+          }
+        }
+      }
+    }
+  }
+}
