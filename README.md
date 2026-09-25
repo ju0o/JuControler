@@ -45,8 +45,17 @@ node scripts/status-board.mjs <registry.json> [--project-id <id>]
    임시 폴더를 지웁니다. 아무것도 바꾸지 않습니다.
 2. `node --test tests/*.test.mjs` — `tests` 폴더의 자동 테스트 파일을
    모두 돌립니다(어댑터, 테스터 하네스, 스킬 만들기 약속 확인, Skill 장착 약속
-   확인, 승인한 기억 약속 확인, e2e 결과 줄 약속 확인 포함). 인터넷은
-   쓰지 않습니다. 마지막에 `fail 0`이 나오면 정상입니다.
+   확인, 승인한 기억 약속 확인, AI 자동 배정 약속 확인, e2e 결과 줄 약속 확인
+   포함). 인터넷은 쓰지 않습니다. 마지막에 `fail 0`이 나오면 정상입니다.
+
+   2번이 확인하는 약속 파일은 아래와 같습니다. 셋 다 규칙을 적어 둔 파일일
+   뿐이고, 무언가를 실행하거나 설치하거나 바꾸지 않습니다.
+
+   | 파일 | 담긴 규칙 | 하는 일 |
+   |---|---|---|
+   | `docs/integration/ai-assignment.v1.json` | AI 자동 배정: 구독 AI 먼저, 무료 모델은 보조 | 규칙만 적어 둡니다. 실행·설치·변경하지 않습니다. |
+   | `docs/integration/skill-attachment.v1.json` | 프로젝트×역할별 Skill 장착 | 규칙만 적어 둡니다. 실행·설치·변경하지 않습니다. |
+   | `docs/integration/approved-memory.v1.json` | 승인한 기억은 모든 AI에게, QA가 배운 점은 제안만 | 규칙만 적어 둡니다. 실행·설치·변경하지 않습니다. |
 3. `node scripts/status-board.mjs <registry.json>` — 내 프로젝트 목록 파일로
    상태판을 봅니다. `--project-id <id>`를 붙이면 그 프로젝트 하나만 보여 줍니다.
 
