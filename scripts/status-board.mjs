@@ -2,6 +2,7 @@
 // Read-only: prints the canonical project-status.v1 board for a registry.
 import { parseArgs } from 'node:util';
 import { loadProjectStatusBoard } from '../src/project-status.mjs';
+import { loadProjectRegistryEntries } from '../src/project-registry.mjs';
 
 const reasonWords = {
   unavailable: '상태 파일이 없거나 읽을 수 없어요',
@@ -52,7 +53,10 @@ try {
     ? `프로젝트 ${board.length}개 중 ${unknown.length}개는 상태를 알 수 없어요: ${unknown.join(', ')} — README 처음 쓰는 법의 reason 표를 보세요\n`
     : `프로젝트 ${board.length}개 모두 상태를 읽었어요\n`);
 } catch (error) {
-  process.stderr.write(`${korean(error)}\n${error.message}\n`);
+  const known = error.message.startsWith('Unknown projectId')
+    ? ` (목록에 있는 ID: ${(await loadProjectRegistryEntries(registryPath)).map((entry) => entry.projectId).join(', ') || '없음'})`
+    : '';
+  process.stderr.write(`${korean(error)}${known}\n${error.message}\n`);
   process.exit(1);
 }
 

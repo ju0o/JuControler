@@ -129,12 +129,12 @@ test('--project-id prints only the selected project', async () => {
 
 test('fails nonzero with no stdout for unavailable or invalid registries', async (t) => {
   await t.test('unknown --project-id', async () => {
-    const { path } = await fixture([entry('a', '/data/a')]);
+    const { path } = await fixture([entry('a', '/data/a'), entry('b', '/data/b')]);
     const { code, stdout, stderr } = await run(path, '--project-id', 'nope');
     assert.equal(code, 1);
     assert.equal(stdout, '');
     assert.match(stderr, /Unknown projectId: nope/);
-    assert.match(stderr.split('\n')[0], /그런 프로젝트 ID가 목록에 없어요 — --project-id 값을 확인하세요/);
+    assert.equal(stderr.split('\n')[0], '그런 프로젝트 ID가 목록에 없어요 — --project-id 값을 확인하세요 (목록에 있는 ID: a, b)');
   });
   await t.test('--project-id still rejects duplicate registries', async () => {
     const { path } = await fixture([entry('a', '/data/a'), entry('dup', '/data/dup'), entry('dup', '/data/dup')]);
