@@ -66,6 +66,26 @@
 | `integration/tester-harness.schema.json` | Tester 역할: 읽기 전용, 네트워크 없음, 판정 권한 없음, QA와 별개 |
 | `integration/project-status.schema.json` | 상태판 한 줄(`project-status.v1`) 모양 |
 
+## 상태판 안내 문장 읽는 법
+
+`node scripts/status-board.mjs <registry.json>`은 상태판 JSON 말고도 stderr에
+한국어 안내 한 줄을 적습니다. `<...>` 자리에는 실제 값이 들어갑니다.
+
+| 안내 문장 | 다음에 할 일 |
+| --- | --- |
+| `프로젝트 <N>개 모두 상태를 읽었어요` | 할 일 없음. 상태판 JSON을 보면 됩니다. |
+| `프로젝트 <N>개 중 <M>개는 상태를 알 수 없어요: <ID>(<reason>: <뜻>), … — README 처음 쓰는 법의 reason 표를 보세요` | 괄호 속 뜻을 보고 그 프로젝트의 상태 파일(`<dataRoot>/current.json`)을 고칩니다. |
+| `목록에 프로젝트가 없어요 — registry.json의 projects에 항목을 넣으세요 (README 처음 쓰는 법 예시 참고)` | `projects`에 항목을 하나 이상 넣습니다. |
+| `프로젝트 목록 파일을 열 수 없어요 — 경로를 확인하세요` | 명령에 적은 파일 경로가 맞는지 확인합니다. |
+| `프로젝트 목록 파일이 올바른 JSON이 아니에요 — 쉼표·따옴표·괄호를 확인하세요` | 파일의 쉼표·따옴표·괄호를 고칩니다. |
+| `프로젝트 목록 파일 내용이 올바르지 않아요 — <고칠 곳>` | `—` 뒤에 적힌 곳을 위 [규칙](#프로젝트-목록registryjson-규칙)대로 고칩니다. |
+| `그런 프로젝트 ID가 목록에 없어요 — --project-id 값을 확인하세요 (목록에 있는 ID: <ID>, …)` | 괄호 속 ID 중 하나로 `--project-id`를 다시 적습니다. 목록이 비었으면 `없음`으로 나옵니다. |
+
+아래 네 가지 오류(열 수 없음, JSON 아님, 내용 오류, 없는 ID)는 한국어 줄 바로
+아래에 영어 줄(예: `Unable to read project registry: …`, `Unknown projectId: …`)이
+하나 더 나옵니다. 개발자가 원인을 찾을 때 쓰려고 남겨 둔 원문이라, 한국어 줄만
+보고 고쳐도 됩니다. 이때 종료 코드는 `1`입니다.
+
 ## 개발자용
 
 - 연동 코드는 `src/`, 실행 도구는 `scripts/`, 테스트는 `tests/`에 둡니다.
