@@ -1,38 +1,32 @@
 # JuControler
 
-One CLI to operate a portfolio of AI-built software projects.
+## 1. 한 줄 소개
 
-JuControler is a local-first, CLI-first control plane: bounded PM/Builder/
-Reviewer/QA/Operations Harnesses route work to interchangeable coding-agent
-runtimes, accept results only against independent evidence, and keep autonomy
-inside explicit resource and human-approval limits.
+**여러 AI 비서가 만드는 프로젝트들의 상태를 한 화면(상태판)에 모아 보여 주는 허브입니다.**
 
-**Current direction (VNext, 2026-09-13):** Role is not Runtime — Harnesses
-(PM, Builder, Reviewer, QA) are separate from the Agent runtime executing
-them. Orchestration is deterministic control plus bounded LLM reasoning, not
-a single required orchestration-brain process. Existing components (Agent
-Relay's managed-work protocol, actl's runtime control, tmux transport) remain
-independent projects that JuControler adapts rather than vendors. Target
-agents are Claude Code, Codex, OpenCode, Cursor, CommandCode, Cline, and Grok;
-these are integration targets, not a claim of certified runtime support.
+개발자가 아니어도 Claude Code, Codex 같은 AI 비서 여러 개에게 일을 맡기는 사람을
+위해 만들었습니다. "지금 어느 프로젝트가 어디까지 왔지?"를 파일을 하나하나 열지 않고
+확인하는 것이 목표입니다.
 
-**Historical proof:** an earlier architecture iteration (internal planning
-documents, not part of this public checkout) certified a working
-Relay↔actl↔tmux↔Codex managed-Task loop end-to-end, including runtime
-identity, writer reservation, result correlation, independent verification,
-and reboot/runtime-loss recovery. That evidence carries forward into the
-current direction as a migration input; the architecture role it once
-assigned to a single required orchestration-brain process does not.
+## 2. 지금 되는 것
 
-**Current status: V0 NOT CERTIFIED.** This checkout does not yet contain an
-implemented integration runtime or a certified end-to-end loop under the
-current direction. The only runnable surface is the read-only status board
-below.
+- **상태판 한 장** — 내 프로젝트 목록 파일을 주면 모든 프로젝트의 상태를 한 번에
+  보여 줍니다. 읽기만 하고, 아무것도 실행하거나 바꾸지 않습니다.
+- **네 가지 원본 읽기** — 저장소 상태 파일, JuPlan 상태, JuCeipt 영수증, Agent Relay
+  야간 보드 스냅샷을 같은 모양으로 맞춰 보여 줍니다.
+- **모르는 건 모른다고 표시** — 파일이 없거나 오래됐으면(기본 5분) 추측하지 않고
+  `UNKNOWN`/`stale`과 짧은 한국어 이유를 보여 줍니다.
+- **쉬운 한국어 오류 안내** — 목록 파일이 틀리면 몇 번째 항목의 어느 칸인지 알려 주고,
+  없는 프로젝트 ID를 물으면 목록에 있는 ID를 보여 줍니다.
+- **한 번에 전체 점검** — 명령 하나로 연습용 목록을 만들어 상태판을 돌려 보고
+  결과를 JSON 한 줄로 알려 줍니다.
+- **AI 운영 규칙 파일** — AI 자동 배정, Skill 장착, 승인한 기억, Tester 권한 같은
+  규칙을 파일로 적어 두고 테스트로 모양을 확인합니다. 규칙은 아직 적어만 둔 상태입니다.
 
-## 처음 쓰는 법
+## 3. 빠른 시작 (처음 쓰는 법)
 
-준비물은 Node.js 22 이상과 bash뿐입니다. 따로 설치할 것도 없고, 인터넷도
-쓰지 않습니다. 저장소 맨 위 폴더에서 아래 명령을 차례로 입력하세요.
+준비물은 Node.js 22 이상과 bash뿐입니다. 설치할 것도 없고 인터넷도 쓰지 않습니다.
+저장소 맨 위 폴더에서 차례로 입력하세요.
 
 ```sh
 bash scripts/e2e.sh
@@ -40,64 +34,23 @@ node --test tests/*.test.mjs
 node scripts/status-board.mjs <registry.json> [--project-id <id>]
 ```
 
-1. `bash scripts/e2e.sh` — 전체 흐름을 한 번에 점검합니다. 임시 폴더에 연습용
-   프로젝트 목록(registry)을 만들고, 상태판을 돌려 보고, 결과를 확인한 뒤
-   임시 폴더를 지웁니다. 아무것도 바꾸지 않습니다.
-2. `node --test tests/*.test.mjs` — `tests` 폴더의 자동 테스트 파일을
-   모두 돌립니다(어댑터, 테스터 하네스, 스킬 만들기 약속 확인, Skill 장착 약속
-   확인, 승인한 기억 약속 확인, AI 자동 배정 약속 확인, e2e 결과 줄 약속 확인
-   포함). 인터넷은 쓰지 않습니다. 마지막에 `fail 0`이 나오면 정상입니다.
+1. `bash scripts/e2e.sh` — 전체 흐름을 한 번에 점검합니다. 끝에 `"ok":true`와
+   `모두 정상이에요`가 나오면 정상입니다.
+2. `node --test tests/*.test.mjs` — 자동 테스트를 모두 돌립니다. 마지막에 `fail 0`이면
+   정상입니다.
+3. `node scripts/status-board.mjs <registry.json>` — 내 프로젝트 목록 파일로 상태판을
+   봅니다. `--project-id <id>`를 붙이면 그 프로젝트 하나만 보여 줍니다.
 
-   2번이 확인하는 약속 파일은 아래와 같습니다. 셋 다 규칙을 적어 둔 파일일
-   뿐이고, 무언가를 실행하거나 설치하거나 바꾸지 않습니다.
-
-   | 파일 | 담긴 규칙 | 하는 일 |
-   |---|---|---|
-   | `docs/integration/ai-assignment.v1.json` | AI 자동 배정: 구독 AI 먼저, 무료 모델은 보조 | 규칙만 적어 둡니다. 실행·설치·변경하지 않습니다. |
-   | `docs/integration/skill-attachment.v1.json` | 프로젝트×역할별 Skill 장착 | 규칙만 적어 둡니다. 실행·설치·변경하지 않습니다. |
-   | `docs/integration/approved-memory.v1.json` | 승인한 기억은 모든 AI에게, QA가 배운 점은 제안만 | 규칙만 적어 둡니다. 실행·설치·변경하지 않습니다. |
-3. `node scripts/status-board.mjs <registry.json>` — 내 프로젝트 목록 파일로
-   상태판을 봅니다. `--project-id <id>`를 붙이면 그 프로젝트 하나만 보여 줍니다.
-
-`bash scripts/e2e.sh`는 JSON 한 줄만 출력합니다. 예시:
-
-```json
-{"schema":"jucontroler.e2e.v1","ok":true,"message":"모두 정상이에요","steps":[{"name":"build-registry","ok":true},{"name":"run-status-board","ok":true},{"name":"check-projections","ok":true},{"name":"run-project-id","ok":true}],"ms":1744,"projects":6,"statuses":{"repo":"READY","plan":"PLANNING","receipt":"ACCEPTED","agent-relay":"day=IDLE;night=RUNNING","lane":"RUNNING","missing":"UNKNOWN"}}
-```
-
-읽는 법:
-
-- `ok` — 모든 단계가 통과하면 `true`입니다. 이때만 종료 코드가 `0`입니다.
-- `message` — 결과를 쉬운 한국어 한 문장으로 알려 줍니다. 정상이면 `모두 정상이에요`,
-  실패하면 처음 멈춘 단계를 알려 줍니다(예: `상태판 실행 단계에서 멈췄어요 — next의
-  명령을 직접 실행해 보세요`).
-- `next` — 실패했을 때만 나옵니다. 멈춘 단계에 맞는 위 `처음 쓰는 법`의 명령
-  하나입니다. `build-registry`·`check-projections`는 `node --test tests/*.test.mjs`,
-  `run-status-board`·`run-project-id`는 `node scripts/status-board.mjs <registry.json>`입니다.
-- `steps` — 단계별 결과입니다. 하나가 실패하면 그 뒤 단계는 실행하지 않고
-  `ok: false`로 적습니다.
-  - `build-registry`: 연습용 프로젝트 목록 만들기
-  - `run-status-board`: 상태판 실행
-  - `check-projections`: 여섯 프로젝트의 상태가 예상과 같은지 확인
-  - `run-project-id`: `--project-id lane`으로 프로젝트 하나만 조회
-- `ms` — 전체 실행 시간(밀리초)입니다. 실행할 때마다 조금씩 다릅니다.
-- `projects`, `statuses` — 상태판에 나온 프로젝트 수와 각 상태입니다.
-
-연습용 목록에는 `sourceKind` 네 종류(`repository-status-file`,
-`juplan-status`, `juceipt-receipt`, `agent-relay-board`)가 하나씩 들어 있습니다.
-`agent-relay-board` 항목은 `<dataRoot>/current.json`에 저장된 `night board`
-스냅샷을 읽고, `projectId`가 `agent-relay`이면 러너를, 그 밖이면 같은 id의
-레인을 보여 줍니다. 없는 레인은 `UNKNOWN`(이유 `missing-lane`)으로 나옵니다.
-
-내 `registry.json`은 아래를 복사해서 값만 바꾸면 됩니다.
+내 `registry.json`은 아래를 복사해서 값만 바꾸면 됩니다. 상태 파일은
+`<dataRoot>/current.json`에 둡니다.
 
 ```json
 {
   "projects": [
     {
       "projectId": "my-project",
-      "workspaceRoot": "/home/me/my-project",
-      "dataRoot": "/home/me/.local/share/my-project",
+      "workspaceRoot": "/work/my-project",
+      "dataRoot": "/data/my-project",
       "sourceRef": "my-project/status",
       "sourceKind": "repository-status-file"
     }
@@ -105,11 +58,8 @@ node scripts/status-board.mjs <registry.json> [--project-id <id>]
 }
 ```
 
-- `workspaceRoot`, `dataRoot`는 `/`로 시작하는 절대 경로여야 합니다.
-- 위에 없는 칸(`freshnessMs` 제외)을 넣으면 오류가 납니다.
-- `sourceKind`는 빼도 되고(그러면 `repository-status-file`), 넣으려면 위 네 종류 중 하나만 씁니다.
-- `current.json`은 각 항목의 `dataRoot` 폴더 바로 안(`<dataRoot>/current.json`)에 둡니다.
-- `UNKNOWN`은 그 파일이 없거나 읽을 수 없어서 상태를 알 수 없다는 뜻입니다.
+점검 결과 읽는 법, 목록 파일 규칙, `sourceKind` 네 종류, 규칙 파일 목록은
+[docs/getting-started.md](docs/getting-started.md)에 있습니다.
 
 상태판에 `reason`이 보이면 아래 표로 뜻과 다음 할 일을 확인하세요.
 
@@ -139,19 +89,37 @@ node scripts/status-board.mjs <registry.json> [--project-id <id>]
 | `missing-generated-at` | 영수증의 `generated_at`이 없거나 형식이 틀렸어요. | `generated_at`을 UTC(`...Z`) 형식으로 넣으세요. |
 | `future-generated-at` | 영수증의 `generated_at`이 지금보다 뒤예요. | 영수증을 만든 컴퓨터의 시계를 확인하세요. |
 
-New integration source belongs in `src/`, runtime/install tooling in `scripts/`,
-and tests in `tests/`. [Public documentation](docs/README.md) is reviewed
-separately from internal product planning, which belongs in the independent
-JuControler-Private checkout.
+## 4. 다른 프로그램과의 관계
 
-Code repository: [ju0o/JuControler](https://github.com/ju0o/JuControler).
-Owner confirmed JuControler as the product name. The local code root and GitHub
-repository use the same name; the separate product SSOT is JuControler-Private.
+```text
+actl (리모컨)
+  │  AI 비서를 켜고 끄고 말을 전합니다
+  ▼
+Agent Relay (셋톱박스: PM → Worker → QA)
+  │  일을 나누고, 만들고, 검사합니다
+  ▼
+JuControler (허브: JuPlan · JuCeipt · Tester)
+     계획·영수증·보드 상태를 모아 한 화면에 보여 줍니다
+```
 
-`src/adapters/agent-relay.mjs` is a read-only adapter that projects a saved
-Agent Relay `night board` JSON snapshot into `project-status.v1` entries; it
-does not dispatch, run, or modify anything. Its mapping and offline usage are
-documented in the [project status contract](docs/integration/PROJECT_STATUS_CONTRACT.md#source-agent-relay-board-agent-relay-board).
+actl과 Agent Relay는 각각 따로 있는 프로그램이고, 이 저장소에 들어 있지 않습니다.
+JuControler는 지금 이들이 **저장해 둔 결과 파일을 읽기만** 합니다. 앞으로 여러
+프로젝트를 한 곳에서 운영하는 허브 앱으로 키우려는 목표 구조는
+[docs/architecture.md](docs/architecture.md)에 있습니다.
 
-See the [minimal target architecture](docs/architecture.md). Repository
-organization does not authorize Phase 1 implementation.
+## 5. 아직 안 되는 것
+
+- AI 비서에게 일을 보내거나, 실행하거나, 멈추게 하는 기능은 없습니다(읽기 전용).
+- 설치형 `jucontroler` 명령, 화면(앱)은 아직 없습니다. `node scripts/…`로 실행합니다.
+- 상태를 자동으로 새로 고치지 않습니다. 원본 프로그램이 파일을 저장해 둬야 합니다.
+- AI 자동 배정·Skill 장착·승인한 기억·Tester 규칙은 파일로 적어만 뒀고, 실제로
+  적용하는 코드는 없습니다.
+- 전체 흐름(계획 → 작업 → 검사 → 다음 작업)은 아직 인증되지 않았습니다(V0 NOT CERTIFIED).
+
+## 6. English summary
+
+JuControler is a read-only hub that shows the status of many AI-built projects on one board.
+It is for non-developers who run several AI coding assistants (Claude Code, Codex, and others).
+Today it reads saved files from a repository, JuPlan, JuCeipt, and an Agent Relay night board.
+Run `bash scripts/e2e.sh`, then `node --test tests/*.test.mjs`, then `node scripts/status-board.mjs <registry.json>`.
+It does not dispatch or run agents yet; see [docs/getting-started.md](docs/getting-started.md) and [docs/architecture.md](docs/architecture.md).
