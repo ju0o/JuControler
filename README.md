@@ -43,9 +43,9 @@ node scripts/status-board.mjs <registry.json> [--project-id <id>]
 1. `bash scripts/e2e.sh` — 전체 흐름을 한 번에 점검합니다. 임시 폴더에 연습용
    프로젝트 목록(registry)을 만들고, 상태판을 돌려 보고, 결과를 확인한 뒤
    임시 폴더를 지웁니다. 아무것도 바꾸지 않습니다.
-2. `node --test tests/*.test.mjs` — `tests` 폴더의 자동 테스트 파일 여덟 개를
-   모두 돌립니다(어댑터, 테스터 하네스, 스킬 만들기 약속 확인, e2e 결과 줄 약속
-   확인 포함). 인터넷은
+2. `node --test tests/*.test.mjs` — `tests` 폴더의 자동 테스트 파일을
+   모두 돌립니다(어댑터, 테스터 하네스, 스킬 만들기 약속 확인, Skill 장착 약속
+   확인, 승인한 기억 약속 확인, e2e 결과 줄 약속 확인 포함). 인터넷은
    쓰지 않습니다. 마지막에 `fail 0`이 나오면 정상입니다.
 3. `node scripts/status-board.mjs <registry.json>` — 내 프로젝트 목록 파일로
    상태판을 봅니다. `--project-id <id>`를 붙이면 그 프로젝트 하나만 보여 줍니다.
