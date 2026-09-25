@@ -88,7 +88,7 @@ console.log(JSON.stringify({
   ok: ok === 'true',
   message: failed ? labels[failed] + ' 단계에서 멈췄어요 — next의 명령을 직접 실행해 보세요' : '모두 정상이에요',
   ...(failed && { next: commands[failed] }),
-  steps: steps.map((step) => ({ name: step.split(':')[0].replaceAll('_', '-'), ok: step.endsWith(':true') })),
+  steps: steps.map((step) => ({ name: step.split(':')[0].replaceAll('_', '-'), label: labels[step.split(':')[0]], ok: step.endsWith(':true') })),
   ms: Math.round(Date.now() - Number(start) * 1000),
   ...summary,
 }));
