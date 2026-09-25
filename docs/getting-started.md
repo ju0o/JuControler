@@ -9,7 +9,7 @@
 않습니다. JSON 한 줄만 출력합니다. 예시:
 
 ```json
-{"schema":"jucontroler.e2e.v1","ok":true,"message":"모두 정상이에요","steps":[{"name":"build-registry","ok":true},{"name":"run-status-board","ok":true},{"name":"check-projections","ok":true},{"name":"run-project-id","ok":true}],"ms":1744,"projects":6,"statuses":{"repo":"READY","plan":"PLANNING","receipt":"ACCEPTED","agent-relay":"day=IDLE;night=RUNNING","lane":"RUNNING","missing":"UNKNOWN"}}
+{"schema":"jucontroler.e2e.v1","ok":true,"message":"모두 정상이에요","steps":[{"name":"build-registry","ok":true},{"name":"run-status-board","ok":true},{"name":"check-projections","ok":true},{"name":"run-project-id","ok":true},{"name":"run-needs-action","ok":true}],"ms":1744,"projects":6,"statuses":{"repo":"READY","plan":"PLANNING","receipt":"ACCEPTED","agent-relay":"day=IDLE;night=RUNNING","lane":"RUNNING","missing":"UNKNOWN"}}
 ```
 
 - `ok` — 모든 단계가 통과하면 `true`입니다. 이때만 종료 코드가 `0`입니다.
@@ -17,7 +17,7 @@
   실패하면 처음 멈춘 단계를 알려 줍니다(예: `상태판 실행 단계에서 멈췄어요 — next의
   명령을 직접 실행해 보세요`).
 - `next` — 실패했을 때만 나옵니다. `build-registry`·`check-projections`는
-  `node --test tests/*.test.mjs`, `run-status-board`·`run-project-id`는
+  `node --test tests/*.test.mjs`, `run-status-board`·`run-project-id`·`run-needs-action`는
   `node scripts/status-board.mjs <registry.json>`입니다.
 - `steps` — 단계별 결과입니다. 하나가 실패하면 그 뒤 단계는 실행하지 않고
   `ok: false`로 적습니다.
@@ -25,6 +25,8 @@
   - `run-status-board`: 상태판 실행
   - `check-projections`: 여섯 프로젝트의 상태가 예상과 같은지 확인
   - `run-project-id`: `--project-id lane`으로 프로젝트 하나만 조회
+  - `run-needs-action`: 보류 중인 레인 `held` 하나만 있는 목록으로 상태판을 돌려
+    `확인이 필요한 프로젝트` 안내 줄이 나오는지 확인
 - `ms` — 전체 실행 시간(밀리초)입니다. 실행할 때마다 조금씩 다릅니다.
 - `projects`, `statuses` — 상태판에 나온 프로젝트 수와 각 상태입니다.
 

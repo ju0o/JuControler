@@ -16,7 +16,7 @@ test('scripts/e2e.sh prints one jucontroler.e2e.v1 JSON line with ordered passin
     schema: 'jucontroler.e2e.v1',
     ok: true,
     message: '모두 정상이에요',
-    steps: ['build-registry', 'run-status-board', 'check-projections', 'run-project-id'].map((name) => ({ name, ok: true })),
+    steps: ['build-registry', 'run-status-board', 'check-projections', 'run-project-id', 'run-needs-action'].map((name) => ({ name, ok: true })),
     projects: 6,
     statuses: {
       repo: 'READY',

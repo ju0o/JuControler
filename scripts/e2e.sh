@@ -59,10 +59,18 @@ run_project_id() {
 process.exit(b.length === 1 && b[0].projectId === "lane" && b[0].status === "RUNNING" ? 0 : 1);' "$tmp/lane.json"
 }
 
+run_needs_action() {
+  mkdir -p "$tmp/held" || return 1
+  printf '{"kind":"BOARD","observedAt":"%s","lanes":[{"id":"held","state":"RUNNING","holds":["waiting"],"humanGate":null}]}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$tmp/held/current.json"
+  printf '{"projects":[{"projectId":"held","workspaceRoot":"/work/held","dataRoot":"%s","sourceRef":"e2e/held","sourceKind":"agent-relay-board"}]}\n' "$tmp/held" >"$tmp/held-registry.json"
+  node "$root/scripts/status-board.mjs" "$tmp/held-registry.json" >/dev/null 2>"$tmp/held.err" &&
+    printf '%s\n' '프로젝트 1개 모두 상태를 읽었어요' '확인이 필요한 프로젝트: held(hold: 레인이 보류 중이에요) — 해당 레인의 확인 요청이나 보류를 처리하세요' | cmp -s - "$tmp/held.err"
+}
+
 # Steps run in order; after the first failure the rest are recorded as not ok without running.
 steps=()
 ok=true
-for step in build_registry run_status_board check_projections run_project_id; do
+for step in build_registry run_status_board check_projections run_project_id run_needs_action; do
   if [ "$ok" = true ] && "$step" >/dev/null 2>&1; then steps+=("$step:true"); else ok=false; steps+=("$step:false"); fi
 done
 
@@ -70,10 +78,10 @@ node - "$ok" "$start" "$tmp/summary.json" "${steps[@]}" <<'EOF'
 const fs = require('node:fs');
 const [ok, start, summaryPath, ...steps] = process.argv.slice(2);
 const summary = fs.existsSync(summaryPath) ? JSON.parse(fs.readFileSync(summaryPath, 'utf8')) : {};
-const labels = { build_registry: '연습용 목록 만들기', run_status_board: '상태판 실행', check_projections: '상태 확인', run_project_id: '프로젝트 하나 조회' };
+const labels = { build_registry: '연습용 목록 만들기', run_status_board: '상태판 실행', check_projections: '상태 확인', run_project_id: '프로젝트 하나 조회', run_needs_action: '확인 필요 알림' };
 const tests = 'node --test tests/*.test.mjs';
 const board = 'node scripts/status-board.mjs <registry.json>';
-const commands = { build_registry: tests, run_status_board: board, check_projections: tests, run_project_id: board };
+const commands = { build_registry: tests, run_status_board: board, check_projections: tests, run_project_id: board, run_needs_action: board };
 const failed = steps.find((step) => step.endsWith(':false'))?.split(':')[0];
 console.log(JSON.stringify({
   schema: 'jucontroler.e2e.v1',
