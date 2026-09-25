@@ -36,7 +36,7 @@ EOF
 
 run_status_board() {
   node "$root/scripts/status-board.mjs" "$tmp/registry.json" >"$tmp/board.json" 2>"$tmp/board.err" &&
-    printf '%s\n' '프로젝트 6개 중 1개는 상태를 알 수 없어요: missing(unavailable) — README 처음 쓰는 법의 reason 표를 보세요' | cmp -s - "$tmp/board.err"
+    printf '%s\n' '프로젝트 6개 중 1개는 상태를 알 수 없어요: missing(unavailable: 상태 파일이 없거나 읽을 수 없어요) — README 처음 쓰는 법의 reason 표를 보세요' | cmp -s - "$tmp/board.err"
 }
 
 check_projections() {

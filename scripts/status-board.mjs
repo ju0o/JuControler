@@ -3,6 +3,32 @@
 import { parseArgs } from 'node:util';
 import { loadProjectStatusBoard } from '../src/project-status.mjs';
 
+const reasonWords = {
+  unavailable: '상태 파일이 없거나 읽을 수 없어요',
+  'invalid-request': '요청 값이 잘못됐어요',
+  malformed: '저장된 값이 JSON 객체가 아니에요',
+  invalid: '상태 파일 모양이 깨졌어요',
+  'project-mismatch': '파일 속 프로젝트 ID가 달라요',
+  'invalid-stale': 'stale 값이 true/false가 아니에요',
+  'missing-status': 'status가 비어 있어요',
+  'missing-lane': '그 레인이 보드에 없어요',
+  'missing-state': '레인 state가 비어 있어요',
+  'invalid-holds': '레인 holds가 목록이 아니에요',
+  'human-gate': '사람 확인을 기다려요',
+  hold: '레인이 보류 중이에요',
+  'missing-runner': '러너 정보가 없어요',
+  'missing-runner-mode': '러너 day/night 값이 없어요',
+  'missing-observedAt': '관찰 시각이 없거나 틀렸어요',
+  'future-observedAt': '관찰 시각이 미래예요',
+  stale: '관찰한 지 너무 오래됐어요',
+  'source-stale': '원본이 오래된 값이라고 알렸어요',
+  'missing-receipt-id': '영수증에 receipt_id가 없어요',
+  'missing-acceptance': '영수증에 acceptance가 없어요',
+  'missing-acceptance-state': '영수증 acceptance.state가 비어 있어요',
+  'missing-generated-at': '영수증 generated_at이 없거나 틀렸어요',
+  'future-generated-at': '영수증 generated_at이 미래예요',
+};
+
 let registryPath;
 let projectId;
 try {
@@ -19,7 +45,7 @@ try {
 try {
   const board = await loadProjectStatusBoard(registryPath, { projectId });
   process.stdout.write(`${JSON.stringify(board, null, 2)}\n`);
-  const unknown = board.filter((row) => row.status === 'UNKNOWN' || row.stale).map((row) => `${row.projectId}(${row.reason ?? 'stale'})`);
+  const unknown = board.filter((row) => row.status === 'UNKNOWN' || row.stale).map((row) => `${row.projectId}(${row.reason ?? 'stale'}: ${reasonWords[row.reason ?? 'stale'] ?? '표에 없는 이유예요'})`);
   process.stderr.write(!board.length
     ? '목록에 프로젝트가 없어요 — registry.json의 projects에 항목을 넣으세요 (README 처음 쓰는 법 예시 참고)\n'
     : unknown.length
