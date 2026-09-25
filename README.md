@@ -95,8 +95,8 @@ node scripts/status-board.mjs <registry.json> [--project-id <id>]
 actl (리모컨)
   │  AI 비서를 켜고 끄고 말을 전합니다
   ▼
-Agent Relay (셋톱박스: PM → Worker → QA)
-  │  일을 나누고, 만들고, 검사합니다
+Agent Relay (셋톱박스: PM → Worker → QA → Tester)
+  │  일을 나누고, 만들고, 검사하고, 테스트합니다
   ▼
 JuControler (허브: JuPlan · JuCeipt · Tester)
      계획·영수증·보드 상태를 모아 한 화면에 보여 줍니다
