@@ -59,7 +59,7 @@
 
 | 파일 | 담긴 규칙 |
 | --- | --- |
-| `integration/ai-assignment.v1.json` | AI 자동 배정: 역할(PM·Worker·QA)마다 구독 AI 먼저, 무료 모델은 보조 |
+| `integration/ai-assignment.v1.json` | AI 자동 배정: 역할(PM·Worker·QA·Tester)마다 구독 AI 먼저, 무료 모델은 보조 |
 | `integration/skill-attachment.v1.json` | 프로젝트×역할별 Skill 장착 |
 | `integration/approved-memory.v1.json` | 승인한 기억은 모든 역할에게, QA가 배운 점은 제안만 |
 | `integration/create-skill-registry.v1.json` | 에이전트별 스킬 만들기 스킬과 읽기 전용 권한 |
@@ -75,11 +75,13 @@
 | --- | --- |
 | `프로젝트 <N>개 모두 상태를 읽었어요` | 할 일 없음. 상태판 JSON을 보면 됩니다. |
 | `프로젝트 <N>개 중 <M>개는 상태를 알 수 없어요: <ID>(<reason>: <뜻>), … — README 처음 쓰는 법의 reason 표를 보세요` | 괄호 속 뜻을 보고 그 프로젝트의 상태 파일(`<dataRoot>/current.json`)을 고칩니다. |
+| `확인이 필요한 프로젝트: <ID>(<reason>: <뜻>), … — 해당 레인의 확인 요청이나 보류를 처리하세요` | 위 줄 아래에 한 줄 더 나옵니다(human-gate·hold). 그 레인의 확인 요청이나 보류를 처리합니다. |
 | `목록에 프로젝트가 없어요 — registry.json의 projects에 항목을 넣으세요 (README 처음 쓰는 법 예시 참고)` | `projects`에 항목을 하나 이상 넣습니다. |
 | `프로젝트 목록 파일을 열 수 없어요 — 경로를 확인하세요` | 명령에 적은 파일 경로가 맞는지 확인합니다. |
 | `프로젝트 목록 파일이 올바른 JSON이 아니에요 — 쉼표·따옴표·괄호를 확인하세요` | 파일의 쉼표·따옴표·괄호를 고칩니다. |
 | `프로젝트 목록 파일 내용이 올바르지 않아요 — <고칠 곳>` | `—` 뒤에 적힌 곳을 위 [규칙](#프로젝트-목록registryjson-규칙)대로 고칩니다. |
 | `그런 프로젝트 ID가 목록에 없어요 — --project-id 값을 확인하세요 (목록에 있는 ID: <ID>, …)` | 괄호 속 ID 중 하나로 `--project-id`를 다시 적습니다. 목록이 비었으면 `없음`으로 나옵니다. |
+| `사용법: node scripts/status-board.mjs <프로젝트 목록 파일.json> [--project-id <프로젝트 ID>]` | 명령을 이 모양대로 다시 적습니다. 아래에 영어 `Usage: …` 줄이 하나 더 나오고, 종료 코드는 `2`입니다. |
 
 아래 네 가지 오류(열 수 없음, JSON 아님, 내용 오류, 없는 ID)는 한국어 줄 바로
 아래에 영어 줄(예: `Unable to read project registry: …`, `Unknown projectId: …`)이
