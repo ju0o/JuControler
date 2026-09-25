@@ -122,10 +122,95 @@ JuControler는 지금 이들이 **저장해 둔 결과 파일을 읽기만** 합
   적용하는 코드는 없습니다.
 - 전체 흐름(계획 → 작업 → 검사 → 다음 작업)은 아직 인증되지 않았습니다(V0 NOT CERTIFIED).
 
-## 6. English summary
+## English
 
-JuControler is a read-only hub that shows the status of many AI-built projects on one board.
-It is for non-developers who run several AI coding assistants (Claude Code, Codex, and others).
-Today it reads saved files from a repository, JuPlan, JuCeipt, and an Agent Relay night board.
-Run `bash scripts/e2e.sh`, then `node --test tests/*.test.mjs`, then `node scripts/status-board.mjs <registry.json>`.
-It does not dispatch or run agents yet; see [docs/getting-started.md](docs/getting-started.md) and [docs/architecture.md](docs/architecture.md).
+> **One control plane for multiple AI-built projects and coding agents.**
+
+JuControler is a local-first, CLI-first control plane for operating a portfolio of software projects built with AI agents.
+
+Instead of treating every coding-agent session as an isolated chat, JuControler aims to connect projects, tasks, workers, reviewers, QA, and operational state into one bounded workflow.
+
+### Core model
+
+```text
+Project
+  → PM / planning
+  → task dispatch
+  → coding-agent runtime
+  → independent review / QA
+  → evidence-backed result
+  → retry or next task
+```
+
+The important distinction is:
+
+> **Role is not runtime.**
+
+PM, Builder, Reviewer, and QA are responsibilities. Claude Code, Codex, OpenCode, Cursor, and other tools are execution runtimes that can potentially fill those roles through adapters.
+
+### Goals
+
+JuControler is designed to help with:
+
+- multi-project visibility
+- bounded task dispatch
+- agent/runtime switching
+- independent verification
+- failure and retry handling
+- resource and approval limits
+- reproducible project state
+- one place to see what is running, blocked, done, or waiting
+
+### Architecture direction
+
+JuControler coordinates existing components rather than embedding every subsystem into one monolith.
+
+```text
+                    JuControler
+        portfolio · policy · orchestration
+                       │
+      ┌────────────────┼────────────────┐
+      │                │                │
+ task / result     runtime control     QA / review
+      │                │                │
+ Agent Relay          actl           verifiers
+                       │
+                    runtimes
+```
+
+Integrations are expected to remain replaceable behind clear interfaces.
+
+### Runtime targets
+
+Potential adapters include:
+
+- Claude Code
+- Codex
+- OpenCode
+- Cursor
+- Cline
+- CommandCode
+- other CLI or desktop coding agents
+
+A listed runtime is an integration target, not a guarantee that it is already certified.
+
+### Product principles
+
+- Independent evidence before accepting completion.
+- Deterministic control where deterministic control is enough.
+- Human approval for high-impact actions.
+- Explicit limits on resources and autonomy.
+- Keep runtimes interchangeable.
+- Preserve project boundaries instead of collapsing everything into one agent session.
+
+### Status
+
+**Active development / pre-V1.**
+
+The control-plane architecture and integration boundaries are being assembled into a usable end-to-end workflow. Public installation instructions will be added once the first reproducible V1 path is ready.
+
+See [`docs/architecture.md`](docs/architecture.md) for the current public architecture notes.
+
+### License
+
+A license will be selected before the first stable public release.
