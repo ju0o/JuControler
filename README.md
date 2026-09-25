@@ -4,6 +4,12 @@
 
 **여러 AI 비서가 만드는 프로젝트들의 상태를 한 화면(상태판)에 모아 보여 주는 허브입니다.**
 
+## 30초 소개 영상
+
+[![30초 소개 영상](docs/media/jucontroler-30s.jpg)](docs/media/jucontroler-30s.mp4)
+
+전체 소개 (60초): https://youtu.be/tB1cCLzTvIs
+
 개발자가 아니어도 Claude Code, Codex 같은 AI 비서 여러 개에게 일을 맡기는 사람을
 위해 만들었습니다. "지금 어느 프로젝트가 어디까지 왔지?"를 파일을 하나하나 열지 않고
 확인하는 것이 목표입니다.
