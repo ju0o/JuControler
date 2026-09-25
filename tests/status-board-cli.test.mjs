@@ -154,6 +154,15 @@ test('fails nonzero with no stdout for unavailable or invalid registries', async
     });
   }
 
+  for (const args of [['--help'], ['-h'], [join(tmpdir(), 'jucontroler-no-such-registry.json'), '--help']]) {
+    await t.test(`help ${JSON.stringify(args)}`, async () => {
+      const { code, stdout, stderr } = await run(...args);
+      assert.equal(code, 0);
+      assert.equal(stderr, '');
+      assert.equal(stdout, '사용법: node scripts/status-board.mjs <프로젝트 목록 파일.json> [--project-id <프로젝트 ID>]\nUsage: status-board.mjs <registry.json> [--project-id <id>]\n');
+    });
+  }
+
   await t.test('missing argument', async () => {
     const { code, stdout, stderr } = await run();
     assert.notEqual(code, 0);

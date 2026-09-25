@@ -30,16 +30,21 @@ const reasonWords = {
   'future-generated-at': '영수증 generated_at이 미래예요',
 };
 
+const usage = '사용법: node scripts/status-board.mjs <프로젝트 목록 파일.json> [--project-id <프로젝트 ID>]\n'
+  + 'Usage: status-board.mjs <registry.json> [--project-id <id>]\n';
 let registryPath;
 let projectId;
 try {
-  const { values, positionals } = parseArgs({ options: { 'project-id': { type: 'string' } }, allowPositionals: true });
+  const { values, positionals } = parseArgs({ options: { 'project-id': { type: 'string' }, help: { type: 'boolean', short: 'h' } }, allowPositionals: true });
+  if (values.help) {
+    process.stdout.write(usage);
+    process.exit(0);
+  }
   if (positionals.length !== 1 || values['project-id']?.trim() === '') throw new Error('usage');
   [registryPath] = positionals;
   projectId = values['project-id'];
 } catch {
-  process.stderr.write('사용법: node scripts/status-board.mjs <프로젝트 목록 파일.json> [--project-id <프로젝트 ID>]\n');
-  process.stderr.write('Usage: status-board.mjs <registry.json> [--project-id <id>]\n');
+  process.stderr.write(usage);
   process.exit(2);
 }
 
