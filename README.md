@@ -1,41 +1,92 @@
 # JuControler
 
-One CLI to operate a portfolio of AI-built software projects.
+> **One control plane for multiple AI-built projects and coding agents.**
 
-JuControler is a local-first, CLI-first control plane: bounded PM/Builder/
-Reviewer/QA/Operations Harnesses route work to interchangeable coding-agent
-runtimes, accept results only against independent evidence, and keep autonomy
-inside explicit resource and human-approval limits.
+JuControler is a local-first, CLI-first control plane for operating a portfolio of software projects built with AI agents.
 
-**Current direction (VNext, 2026-09-13):** Role is not Runtime — Harnesses
-(PM, Builder, Reviewer, QA) are separate from the Agent runtime executing
-them. Orchestration is deterministic control plus bounded LLM reasoning, not
-a single required orchestration-brain process. Existing components (Agent
-Relay's managed-work protocol, actl's runtime control, tmux transport) remain
-independent projects that JuControler adapts rather than vendors. Target
-agents are Claude Code, Codex, OpenCode, Cursor, CommandCode, Cline, and Grok;
-these are integration targets, not a claim of certified runtime support.
+Instead of treating every coding-agent session as an isolated chat, JuControler aims to connect projects, tasks, workers, reviewers, QA, and operational state into one bounded workflow.
 
-**Historical proof:** an earlier architecture iteration (internal planning
-documents, not part of this public checkout) certified a working
-Relay↔actl↔tmux↔Codex managed-Task loop end-to-end, including runtime
-identity, writer reservation, result correlation, independent verification,
-and reboot/runtime-loss recovery. That evidence carries forward into the
-current direction as a migration input; the architecture role it once
-assigned to a single required orchestration-brain process does not.
+## Core model
 
-**Current status: V0 NOT CERTIFIED.** This checkout does not yet contain an
-implemented integration runtime or a certified end-to-end loop under the
-current direction. There are no installation or execution instructions yet.
+```text
+Project
+  → PM / planning
+  → task dispatch
+  → coding-agent runtime
+  → independent review / QA
+  → evidence-backed result
+  → retry or next task
+```
 
-New integration source belongs in `src/`, runtime/install tooling in `scripts/`,
-and tests in `tests/`. [Public documentation](docs/README.md) is reviewed
-separately from internal product planning, which belongs in the independent
-JuControler-Private checkout.
+The important distinction is:
 
-Code repository: [ju0o/JuControler](https://github.com/ju0o/JuControler).
-Owner confirmed JuControler as the product name. The local code root and GitHub
-repository use the same name; the separate product SSOT is JuControler-Private.
+> **Role is not runtime.**
 
-See the [minimal target architecture](docs/architecture.md). Repository
-organization does not authorize Phase 1 implementation.
+PM, Builder, Reviewer, and QA are responsibilities. Claude Code, Codex, OpenCode, Cursor, and other tools are execution runtimes that can potentially fill those roles through adapters.
+
+## Goals
+
+JuControler is designed to help with:
+
+- multi-project visibility
+- bounded task dispatch
+- agent/runtime switching
+- independent verification
+- failure and retry handling
+- resource and approval limits
+- reproducible project state
+- one place to see what is running, blocked, done, or waiting
+
+## Architecture direction
+
+JuControler coordinates existing components rather than embedding every subsystem into one monolith.
+
+```text
+                    JuControler
+        portfolio · policy · orchestration
+                       │
+      ┌────────────────┼────────────────┐
+      │                │                │
+ task / result     runtime control     QA / review
+      │                │                │
+ Agent Relay          actl           verifiers
+                       │
+                    runtimes
+```
+
+Integrations are expected to remain replaceable behind clear interfaces.
+
+## Runtime targets
+
+Potential adapters include:
+
+- Claude Code
+- Codex
+- OpenCode
+- Cursor
+- Cline
+- CommandCode
+- other CLI or desktop coding agents
+
+A listed runtime is an integration target, not a guarantee that it is already certified.
+
+## Product principles
+
+- Independent evidence before accepting completion.
+- Deterministic control where deterministic control is enough.
+- Human approval for high-impact actions.
+- Explicit limits on resources and autonomy.
+- Keep runtimes interchangeable.
+- Preserve project boundaries instead of collapsing everything into one agent session.
+
+## Status
+
+**Active development / pre-V1.**
+
+The control-plane architecture and integration boundaries are being assembled into a usable end-to-end workflow. Public installation instructions will be added once the first reproducible V1 path is ready.
+
+See [`docs/architecture.md`](docs/architecture.md) for the current public architecture notes.
+
+## License
+
+A license will be selected before the first stable public release.
