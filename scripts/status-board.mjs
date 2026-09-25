@@ -52,6 +52,8 @@ try {
     : unknown.length
     ? `프로젝트 ${board.length}개 중 ${unknown.length}개는 상태를 알 수 없어요: ${unknown.join(', ')} — README 처음 쓰는 법의 reason 표를 보세요\n`
     : `프로젝트 ${board.length}개 모두 상태를 읽었어요\n`);
+  const needsAction = board.filter((row) => row.reason === 'human-gate' || row.reason === 'hold').map((row) => `${row.projectId}(${row.reason}: ${reasonWords[row.reason]})`);
+  if (needsAction.length) process.stderr.write(`확인이 필요한 프로젝트: ${needsAction.join(', ')} — 해당 레인의 확인 요청이나 보류를 처리하세요\n`);
 } catch (error) {
   const known = error.message.startsWith('Unknown projectId')
     ? ` (목록에 있는 ID: ${(await loadProjectRegistryEntries(registryPath)).map((entry) => entry.projectId).join(', ') || '없음'})`

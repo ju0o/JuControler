@@ -256,6 +256,32 @@ test('prints a saved Agent Relay board source by runner and lane without writing
   assert.deepEqual(await readdir(directory, { recursive: true }), before);
 });
 
+test('names held and human-gate lanes on one extra stderr line', async () => {
+  const { directory, path } = await fixture([]);
+  const relayRoot = join(directory, 'relay');
+  await mkdir(relayRoot);
+  const observedAt = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  await writeFile(join(relayRoot, 'current.json'), JSON.stringify({
+    kind: 'BOARD', observedAt, runner: { day: 'IDLE', night: 'RUNNING' }, lanes: [
+      { id: 'held', state: 'RUNNING', holds: ['waiting'] },
+      { id: 'gated', state: 'BLOCKED', humanGate: { reason: 'review' } },
+    ],
+  }));
+  await writeFile(path, JSON.stringify({ projects: [
+    { ...entry('held', relayRoot), sourceKind: 'agent-relay-board' },
+    { ...entry('gated', relayRoot), sourceKind: 'agent-relay-board' },
+  ] }));
+
+  const { code, stdout, stderr } = await run(path);
+  assert.equal(code, 0, stderr);
+  assert.deepEqual(JSON.parse(stdout).map((row) => [row.projectId, row.status, row.reason]), [
+    ['held', 'RUNNING', 'hold'],
+    ['gated', 'BLOCKED', 'human-gate'],
+  ]);
+  assert.equal(stderr, '프로젝트 2개 모두 상태를 읽었어요\n'
+    + '확인이 필요한 프로젝트: held(hold: 레인이 보류 중이에요), gated(human-gate: 사람 확인을 기다려요) — 해당 레인의 확인 요청이나 보류를 처리하세요\n');
+});
+
 test('offline e2e script prints exactly one passing JSON result line and cleans up', async () => {
   const parent = await mkdtemp(join(tmpdir(), 'jucontroler-e2e-parent-'));
   const script = new URL('../scripts/e2e.sh', import.meta.url).pathname;
