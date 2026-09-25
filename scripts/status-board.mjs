@@ -34,6 +34,27 @@ function korean({ message, cause }) {
   if (cause instanceof SyntaxError) return '프로젝트 목록 파일이 올바른 JSON이 아니에요 — 쉼표·따옴표·괄호를 확인하세요';
   if (message.startsWith('Unable to read project registry')) return '프로젝트 목록 파일을 열 수 없어요 — 경로를 확인하세요';
   if (message.startsWith('Unknown projectId')) return '그런 프로젝트 ID가 목록에 없어요 — --project-id 값을 확인하세요';
-  if (message.startsWith('Invalid project registry')) return '프로젝트 목록 파일 내용이 올바르지 않아요 — 아래 내용을 보고 파일을 고치세요';
+  if (message.startsWith('Invalid project registry')) return `프로젝트 목록 파일 내용이 올바르지 않아요 — ${registryHint(message)}`;
   return '상태판을 불러오지 못했어요 — 아래 내용을 확인하세요';
+}
+
+function registryHint(message) {
+  const detail = message.replace('Invalid project registry: ', '');
+  if (detail === 'projects must be an array') return 'projects는 [ ]로 감싼 목록이어야 해요';
+  let m = detail.match(/^projectId (.+) is duplicated$/);
+  if (m) return `프로젝트 ID ${m[1]}가 두 번 이상 나와요 — 하나만 남기거나 ID를 바꾸세요`;
+  m = detail.match(/^projects\[(\d+)\](?:\.(\w+))? (.+)$/);
+  if (!m) {
+    m = detail.match(/^(.+) is not a known field$/);
+    return m ? `맨 위에는 projects만 둘 수 있어요 — ${m[1]}를 지우세요` : '아래 내용을 보고 파일을 고치세요';
+  }
+  const [, index, field, rule] = m;
+  const at = `${Number(index) + 1}번째 항목`;
+  if (rule === 'must be an object') return `${at}이 { }로 감싼 객체가 아니에요`;
+  if (rule === 'is not a known field') return `${at}의 ${field}는 쓸 수 없는 이름이에요 — 지우거나 철자를 확인하세요`;
+  if (rule === 'must be a non-empty string') return `${at}에 ${field}가 없거나 비어 있어요 — 값을 채우세요`;
+  if (rule === 'must be absolute') return `${at}의 ${field}는 /로 시작하는 절대 경로여야 해요`;
+  if (rule === 'must be a nonnegative number') return `${at}의 ${field}는 0 이상의 숫자여야 해요`;
+  if (rule.startsWith('must be one of ')) return `${at}의 ${field}는 ${rule.slice('must be one of '.length)} 중 하나여야 해요`;
+  return `${at}을 확인하세요 — 아래 내용을 보고 파일을 고치세요`;
 }

@@ -182,7 +182,8 @@ test('fails nonzero with no stdout for unavailable or invalid registries', async
     assert.equal(code, 1);
     assert.equal(stdout, '');
     assert.match(stderr, /dataRoot must be absolute/);
-    assert.match(stderr.split('\n')[0], /프로젝트 목록 파일 내용이 올바르지 않아요/);
+    assert.equal(stderr.split('\n')[0], '프로젝트 목록 파일 내용이 올바르지 않아요 — 1번째 항목의 dataRoot는 /로 시작하는 절대 경로여야 해요');
+    assert.equal(stderr.split('\n')[1], 'Invalid project registry: projects[0].dataRoot must be absolute');
   });
   await t.test('duplicate project IDs', async () => {
     const { path } = await fixture([entry('dup', '/data/dup'), entry('dup', '/data/dup')]);
@@ -190,8 +191,44 @@ test('fails nonzero with no stdout for unavailable or invalid registries', async
     assert.equal(code, 1);
     assert.equal(stdout, '');
     assert.match(stderr, /is duplicated/);
-    assert.match(stderr.split('\n')[0], /프로젝트 목록 파일 내용이 올바르지 않아요/);
+    assert.equal(stderr.split('\n')[0], '프로젝트 목록 파일 내용이 올바르지 않아요 — 프로젝트 ID dup가 두 번 이상 나와요 — 하나만 남기거나 ID를 바꾸세요');
+    assert.equal(stderr.split('\n')[1], 'Invalid project registry: projectId dup is duplicated');
   });
+  await t.test('unknown entry field', async () => {
+    const { path } = await fixture([entry('a', '/data/a'), { ...entry('b', '/data/b'), colour: 'red' }]);
+    const { code, stdout, stderr } = await run(path);
+    assert.equal(code, 1);
+    assert.equal(stdout, '');
+    assert.equal(stderr.split('\n')[0], '프로젝트 목록 파일 내용이 올바르지 않아요 — 2번째 항목의 colour는 쓸 수 없는 이름이에요 — 지우거나 철자를 확인하세요');
+    assert.equal(stderr.split('\n')[1], 'Invalid project registry: projects[1].colour is not a known field');
+  });
+  await t.test('bad sourceKind', async () => {
+    const { path } = await fixture([{ ...entry('a', '/data/a'), sourceKind: 'nope' }]);
+    const { code, stdout, stderr } = await run(path);
+    assert.equal(code, 1);
+    assert.equal(stdout, '');
+    assert.equal(stderr.split('\n')[0], '프로젝트 목록 파일 내용이 올바르지 않아요 — 1번째 항목의 sourceKind는 repository-status-file, juplan-status, juceipt-receipt, agent-relay-board 중 하나여야 해요');
+    assert.match(stderr.split('\n')[1], /^Invalid project registry: projects\[0\]\.sourceKind must be one of /);
+  });
+  for (const [name, registry, hint] of [
+    ['missing field', { projects: [{ ...entry('a', '/data/a'), sourceRef: undefined }] }, '1번째 항목에 sourceRef가 없거나 비어 있어요 — 값을 채우세요'],
+    ['empty field', { projects: [{ ...entry('a', '/data/a'), projectId: ' ' }] }, '1번째 항목에 projectId가 없거나 비어 있어요 — 값을 채우세요'],
+    ['relative workspaceRoot', { projects: [{ ...entry('a', '/data/a'), workspaceRoot: 'work' }] }, '1번째 항목의 workspaceRoot는 /로 시작하는 절대 경로여야 해요'],
+    ['negative freshnessMs', { projects: [{ ...entry('a', '/data/a'), freshnessMs: -1 }] }, '1번째 항목의 freshnessMs는 0 이상의 숫자여야 해요'],
+    ['projects not an array', { projects: {} }, 'projects는 [ ]로 감싼 목록이어야 해요'],
+    ['entry not an object', { projects: [entry('a', '/data/a'), 'b'] }, '2번째 항목이 { }로 감싼 객체가 아니에요'],
+    ['unknown top-level field', { projects: [], extra: 1 }, '맨 위에는 projects만 둘 수 있어요 — extra를 지우세요'],
+  ]) {
+    await t.test(`invalid registry hint: ${name}`, async () => {
+      const { path } = await fixture([]);
+      await writeFile(path, JSON.stringify(registry));
+      const { code, stdout, stderr } = await run(path);
+      assert.equal(code, 1);
+      assert.equal(stdout, '');
+      assert.equal(stderr.split('\n')[0], `프로젝트 목록 파일 내용이 올바르지 않아요 — ${hint}`);
+      assert.match(stderr.split('\n')[1], /^Invalid project registry: /);
+    });
+  }
 });
 
 test('prints a saved Agent Relay board source by runner and lane without writing', async () => {
