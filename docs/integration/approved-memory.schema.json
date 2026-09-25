@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ju0o.github.io/JuControler/schemas/approved-memory.v1.json",
+  "title": "JuControler approved-memory projection",
+  "description": "Read-only record of Founder memories. Every agent (PM, Worker, QA) receives exactly the active, Founder-approved memories whose scope is global or its own project. Proposed entries, such as QA lessons awaiting approval, are listed but never delivered.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "delivery", "memories"],
+  "properties": {
+    "schema": {
+      "const": "approved-memory.v1",
+      "description": "Approved-memory contract identifier."
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roles", "status", "approvedBy", "permissions"],
+      "description": "Fixed projection rule. There is no per-role filter and no writable variant.",
+      "properties": {
+        "roles": {
+          "const": ["pm", "worker", "qa"],
+          "description": "Every harness role receives the same projection. Role is not Runtime."
+        },
+        "status": {
+          "const": "active",
+          "description": "Only memories with this status are delivered."
+        },
+        "approvedBy": {
+          "const": "founder",
+          "description": "Only memories approved by the Founder are delivered."
+        },
+        "permissions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["write", "approve", "dispatch"],
+          "description": "Explicit read-only permissions. Every field is fixed.",
+          "properties": {
+            "write": {
+              "const": false,
+              "description": "Must not add, edit, or delete any memory."
+            },
+            "approve": {
+              "const": false,
+              "description": "Must not approve or promote a proposed memory; only the Founder approves."
+            },
+            "dispatch": {
+              "const": false,
+              "description": "Must not dispatch, send to, or control agents, runtimes, or managed work."
+            }
+          }
+        }
+      }
+    },
+    "memories": {
+      "type": "array",
+      "minItems": 1,
+      "description": "memoryId is unique across entries.",
+      "items": { "$ref": "#/$defs/memory" }
+    }
+  },
+  "$defs": {
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["memoryId", "scope", "projectId", "origin", "status", "approvedBy", "text"],
+      "properties": {
+        "memoryId": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "scope": {
+          "enum": ["global", "project"],
+          "description": "global reaches every project; project reaches only projectId."
+        },
+        "projectId": {
+          "type": ["string", "null"],
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Project Registry projectId for project scope; null for global scope."
+        },
+        "origin": {
+          "enum": ["founder", "qa-lesson"],
+          "description": "Who wrote the memory. A qa-lesson stays proposed until the Founder approves it."
+        },
+        "status": {
+          "enum": ["active", "proposed"]
+        },
+        "approvedBy": {
+          "enum": ["founder", null],
+          "description": "founder when active; null while proposed."
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "scope": { "const": "global" } } },
+          "then": { "properties": { "projectId": { "const": null } } },
+          "else": { "properties": { "projectId": { "type": "string" } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "active" } } },
+          "then": { "properties": { "approvedBy": { "const": "founder" } } },
+          "else": { "properties": { "approvedBy": { "const": null } } }
+        }
+      ]
+    }
+  }
+}

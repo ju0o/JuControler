@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ju0o.github.io/JuControler/schemas/tester-harness.v1.json",
+  "title": "JuControler Tester harness",
+  "description": "An independent, read-only Tester Harness. The Tester observes and reports test evidence; it is not the QA Harness and cannot accept, reject, or gate results.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "role", "harnessId", "projectId", "permissions"],
+  "properties": {
+    "schema": {
+      "const": "tester-harness.v1",
+      "description": "Harness contract identifier."
+    },
+    "role": {
+      "const": "tester",
+      "description": "Tester only. The QA Harness is a separate role with its own contract; a Tester instance must never carry role qa."
+    },
+    "harnessId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifier of this bounded Harness instance, released after its event."
+    },
+    "projectId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Project the Tester observes; must match a Project Registry entry."
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["filesystem", "repository", "network", "dispatch", "verdict"],
+      "description": "Explicit read-only permissions. Every field is fixed; there is no writable variant.",
+      "properties": {
+        "filesystem": {
+          "const": "read-only",
+          "description": "May read project files; must not create, modify, or delete them."
+        },
+        "repository": {
+          "const": "read-only",
+          "description": "May read Git history and state; must not commit, push, reset, or change refs."
+        },
+        "network": {
+          "const": "none",
+          "description": "Offline; no outbound connections."
+        },
+        "dispatch": {
+          "const": false,
+          "description": "Must not dispatch, send to, or control agents, runtimes, or managed work."
+        },
+        "verdict": {
+          "const": false,
+          "description": "Must not issue PASS / CHANGES / OWNER_REQUIRED; acceptance belongs to QA and independent Verification."
+        }
+      }
+    }
+  }
+}

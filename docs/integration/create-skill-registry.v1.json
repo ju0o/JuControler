@@ -1,0 +1,101 @@
+{
+  "schema": "create-skill-registry.v1",
+  "skills": [
+    {
+      "agentId": "claude-code",
+      "skillId": "create-skill.claude-code",
+      "permissions": {
+        "filesystem": "read-only",
+        "repository": "read-only",
+        "network": "none",
+        "dispatch": false,
+        "install": false,
+        "verdict": false
+      }
+    },
+    {
+      "agentId": "codex",
+      "skillId": "create-skill.codex",
+      "permissions": {
+        "filesystem": "read-only",
+        "repository": "read-only",
+        "network": "none",
+        "dispatch": false,
+        "install": false,
+        "verdict": false
+      }
+    },
+    {
+      "agentId": "opencode",
+      "skillId": "create-skill.opencode",
+      "permissions": {
+        "filesystem": "read-only",
+        "repository": "read-only",
+        "network": "none",
+        "dispatch": false,
+        "install": false,
+        "verdict": false
+      }
+    },
+    {
+      "agentId": "cursor",
+      "skillId": "create-skill.cursor",
+      "permissions": {
+        "filesystem": "read-only",
+        "repository": "read-only",
+        "network": "none",
+        "dispatch": false,
+        "install": false,
+        "verdict": false
+      }
+    },
+    {
+      "agentId": "commandcode",
+      "skillId": "create-skill.commandcode",
+      "permissions": {
+        "filesystem": "read-only",
+        "repository": "read-only",
+        "network": "none",
+        "dispatch": false,
+        "install": false,
+        "verdict": false
+      }
+    },
+    {
+      "agentId": "cline",
+      "skillId": "create-skill.cline",
+      "permissions": {
+        "filesystem": "read-only",
+        "repository": "read-only",
+        "network": "none",
+        "dispatch": false,
+        "install": false,
+        "verdict": false
+      }
+    },
+    {
+      "agentId": "grok",
+      "skillId": "create-skill.grok",
+      "permissions": {
+        "filesystem": "read-only",
+        "repository": "read-only",
+        "network": "none",
+        "dispatch": false,
+        "install": false,
+        "verdict": false
+      }
+    },
+    {
+      "agentId": "supervisor",
+      "skillId": "create-skill.supervisor",
+      "permissions": {
+        "filesystem": "read-only",
+        "repository": "read-only",
+        "network": "none",
+        "dispatch": false,
+        "install": false,
+        "verdict": false
+      }
+    }
+  ]
+}
